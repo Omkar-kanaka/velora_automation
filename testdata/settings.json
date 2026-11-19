@@ -1,0 +1,66 @@
+{
+  "ai_model_expected_text": "Managed by the server config.",
+  "database": {
+    "temp_edit_port": "15432",
+    "invalid_port": "19999",
+    "expected_unreachable_text": "Couldn't reach",
+    "expected_success_text": "Connection works.",
+    "expected_rejected_credentials_text": "The database rejected the username or password."
+  },
+  "database_profiles": [
+    {
+      "name": "PostgreSQL",
+      "option_text": "PostgreSQL",
+      "kind": "postgresql",
+      "host": "localhost",
+      "port": "5432",
+      "database": "velora_test",
+      "username": "velora",
+      "password": "Velora@123",
+      "expected_success": true,
+      "expected_feedback": "Connection works."
+    },
+    {
+      "name": "MySQL",
+      "option_text": "MySQL / MariaDB",
+      "kind": "mysql",
+      "host": "localhost",
+      "port": "3306",
+      "database": "velora_test",
+      "username": "velora",
+      "password": "Velora@123",
+      "expected_success": true,
+      "expected_feedback": "Connection works."
+    },
+    {
+      "name": "SQL Server",
+      "option_text": "SQL Server (untested)",
+      "kind": "sqlserver",
+      "host": "localhost",
+      "port": "1433",
+      "database": "velora_test",
+      "username": "sa",
+      "password": "Velora@123Strong",
+      "expected_success": false,
+      "expected_feedback": "Couldn't connect to the database"
+    },
+    {
+      "name": "Oracle",
+      "option_text": "Oracle (untested)",
+      "kind": "oracle",
+      "host": "localhost",
+      "port": "1521",
+      "database": "FREEPDB1",
+      "username": "velora",
+      "password": "Velora@123Strong",
+      "expected_success": false,
+      "expected_feedback": "Couldn't connect to the database"
+    }
+  ],
+  "storage": {
+    "temp_edit_path": "C:\\QA\\TempUnsavedPath",
+    "invalid_path": "Z:\\non_existent_qa_invalid_dir_99999",
+    "expected_success_text": "Connection works.",
+    "expected_invalid_text": "Can't write to the folder"
+  }
+}

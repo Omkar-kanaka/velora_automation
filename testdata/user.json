@@ -1,0 +1,30 @@
+{
+  "local_qa": {
+    "valid_user": {
+      "email": "test@ok.com",
+      "password": "Velora@123",
+      "org": "default"
+    },
+    "invalid_password_user": {
+      "email": "test@ok.com",
+      "password": "WrongPassword!999",
+      "org": "default"
+    },
+    "unregistered_user": {
+      "email": "nonexistent_qa_user@example.com",
+      "password": "SomePassword@123",
+      "org": "default"
+    },
+    "new_signup_user": {
+      "email_prefix": "velora_qa",
+      "email_domain": "example.com",
+      "password": "VeloraTest@123",
+      "org": "default"
+    },
+    "duplicate_signup_user": {
+      "email": "test@ok.com",
+      "password": "VeloraTest@123",
+      "org": "default"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Generated test artifacts & reports
+artifacts/
+reports/
+test-results/
+playwright-report/
+
+# MS Office / Excel temporary lock files
+~$*.xlsx
+~$*.xls

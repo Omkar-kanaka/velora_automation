@@ -1,0 +1,30 @@
+{
+  "sample_project_name": "Hospital Management System QA",
+  "sample_prompt": "Build a Hospital Management System with patient registration, appointments, and billing modules.",
+  "example_prompts": [
+    "Quick product discovery",
+    "Partner self-serve onboarding",
+    "Fix duplicate order emails"
+  ],
+  "meeting_notes": {
+    "title": "QA Kickoff Notes",
+    "body": "Users need SSO authentication, role-based access control, and downloadable audit logs."
+  },
+  "repository": {
+    "valid_url": "https://github.com/octocat/Hello-World",
+    "valid_branch": "main",
+    "expected_chip_text": "Hello-World @ main",
+    "invalid_url": "invalid-repo-url",
+    "expected_invalid_message": "Use a full repository link, like https://github.com/org/repo."
+  },
+  "uploads": {
+    "valid_frd_files": [
+      "Test_frd.md",
+      "Test_Hospital_Management_System_FRD (1).pdf",
+      "Test_Hospital_Management_System_FRD.docx"
+    ],
+    "primary_frd_file": "Test_frd.md",
+    "invalid_filename": "unsupported_file.png",
+    "expected_invalid_alert": "Only .doc, .docx, .pdf, .md and .txt files can be added."
+  }
+}
