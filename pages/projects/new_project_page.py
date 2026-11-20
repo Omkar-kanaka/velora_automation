@@ -35,7 +35,11 @@ class NewProjectPage(BasePage):
     step_two_start_run_button_name = "Start the run"
     start_run_button_enabled = 'button[type="submit"]:has-text("Start the run"):not([disabled])'
     start_run_button_disabled = 'button[type="submit"]:has-text("Start the run")[disabled]'
-    start_answering_button = 'button:has-text("Start answering")'
+    start_answering_button = (
+        'a:has-text("Start answering"), '
+        'button:has-text("Start answering"), '
+        '[data-slot="button"]:has-text("Start answering")'
+    )
     getting_it_ready_card = 'div:has-text("Getting it ready")'
     first_question_ready_card = 'div:has-text("Your first question is ready")'
 

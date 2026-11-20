@@ -28,7 +28,11 @@ class RunQuestionsPage(BasePage):
 
     # Completion state locators
     completion_banner = "text=\"That's everything for now\""
-    continue_to_specs_button = 'button:has-text("Continue to Specs")'
+    continue_to_specs_button = (
+        'button:has-text("Continue to Specs"), '
+        'a:has-text("Continue to Specs"), '
+        '[data-slot="button"]:has-text("Continue to Specs")'
+    )
     answered_so_far_header = 'button:has-text("Answered so far"), div:has-text("Answered so far")'
     answered_toggle_button = 'button:has-text("Hide"), button:has-text("Show")'
 

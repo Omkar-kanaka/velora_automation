@@ -21,10 +21,10 @@ class RunSpecsPage(BasePage):
     ready_for_review_indicator = "text='Ready for your review'"
 
     # Action buttons
-    download_trigger_button = 'button:has-text("Download")'
-    download_menu_item = '[role="menuitem"], [role="option"], button:has-text("Download as"), button:has-text(".zip")'
-    request_changes_trigger_button = 'button:has-text("Request changes")'
-    continue_to_delivery_button = 'button:has-text("Continue to Delivery")'
+    download_trigger_button = 'button:has-text("Download"), a:has-text("Download"), [data-slot="button"]:has-text("Download")'
+    download_menu_item = '[role="menuitem"], [role="option"], button:has-text("Download as"), a:has-text("Download as"), button:has-text(".zip")'
+    request_changes_trigger_button = 'button:has-text("Request changes"), a:has-text("Request changes"), [data-slot="button"]:has-text("Request changes")'
+    continue_to_delivery_button = 'button:has-text("Continue to Delivery"), a:has-text("Continue to Delivery"), [data-slot="button"]:has-text("Continue to Delivery")'
 
     # Request changes drawer ("Spec changes")
     drawer_container = "div:has-text('Spec changes')"
@@ -134,7 +134,9 @@ class RunSpecsPage(BasePage):
     # ------------------------------------------------------------------
     def get_tab_locator(self, tab_name: str) -> Locator:
         """Get locator for a specific specification tab button."""
-        return self.page.locator(f'button:has-text("{tab_name}")').first
+        return self.page.locator(
+            f'button:has-text("{tab_name}"), a:has-text("{tab_name}"), [role="tab"]:has-text("{tab_name}")'
+        ).first
 
     def is_tab_visible(self, tab_name: str, timeout_ms: int = 3000) -> bool:
         """Check if a specification tab button is visible."""
