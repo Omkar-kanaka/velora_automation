@@ -221,14 +221,44 @@ class SettingsPage(BasePage):
         return self.is_locator_visible(self.page.locator(self.storage_path_input), timeout_ms=timeout_ms)
 
     def enter_storage_path(self, path: str) -> "SettingsPage":
-        self.fill_locator(self.page.locator(self.storage_path_input), path, "Storage Path input")
+        input_loc = self.page.locator(self.storage_path_input)
+        self.fill_locator(input_loc, path, "Storage Path input")
+        input_loc.press("Tab")
         return self
 
     def cancel_storage_edit_form(self) -> None:
         section = self.page.locator(self.storage_section).first
         cancel_btn = section.get_by_role("button", name=self.cancel_button_name)
-        self.click_locator(cancel_btn, "Storage Cancel button")
-        self.wait_for_hidden(self.page.locator(self.storage_path_input))
+        if self.is_locator_visible(cancel_btn, timeout_ms=1000):
+            self.click_locator(cancel_btn, "Storage Cancel button")
+            self.wait_for_hidden(self.page.locator(self.storage_path_input))
+
+    def click_storage_test_connection_button(self) -> "SettingsPage":
+        section = self.page.locator(self.storage_section).first
+        test_btn = section.get_by_role("button", name=self.test_connection_button_name)
+        self.click_locator(test_btn, "Storage Test connection button")
+        return self
+
+    def get_storage_feedback_locator(self):
+        section = self.page.locator(self.storage_section).first
+        return section.locator(self.section_feedback).first
+
+    def get_storage_feedback_text(self) -> str:
+        locator = self.get_storage_feedback_locator()
+        self.wait_for_visible(locator)
+        return locator.inner_text().strip()
+
+    def get_storage_field_error_text(self) -> str:
+        section = self.page.locator(self.storage_section).first
+        error_loc = section.locator(".text-destructive, [role='alert'], p").filter(
+            has_text="absolute"
+        ).first
+        if self.is_locator_visible(error_loc, timeout_ms=3000):
+            return error_loc.inner_text().strip()
+        fallback = section.locator(".text-destructive").first
+        if self.is_locator_visible(fallback, timeout_ms=1000):
+            return fallback.inner_text().strip()
+        return ""
 
     def test_storage_connection(self) -> tuple[int, dict[str, Any], str]:
         """Trigger Storage Test connection, capture API status/payload and inline UI feedback."""
@@ -243,6 +273,6 @@ class SettingsPage(BasePage):
 
         response = resp_info.value
         payload: dict[str, Any] = response.json() if response.ok else {}
-        feedback_locator = section.locator(self.section_feedback).first
+        feedback_locator = self.get_storage_feedback_locator()
         self.wait_for_visible(feedback_locator)
         return response.status, payload, feedback_locator.inner_text().strip()

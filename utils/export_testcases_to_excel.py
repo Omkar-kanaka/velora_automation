@@ -185,7 +185,8 @@ def create_dashboard_sheet(wb: Any, total_cases: int, module_counts: Dict[str, i
     modules_data = [
         ("1", "Authentication & Session", "docs/test_cases/auth_test_cases.md", "tests/auth/test_auth.py", module_counts.get("auth", 0)),
         ("2", "Projects & Workflows", "docs/test_cases/projects_test_cases.md", "tests/projects/test_*.py", module_counts.get("projects", 0)),
-        ("3", "Platform & Settings", "docs/test_cases/platform_and_settings_test_cases.md", "tests/navigation/ & tests/settings/", module_counts.get("platform", 0)),
+        ("3", "Runs & Workflow Lifecycle", "docs/test_cases/runs_and_workflow_test_cases.md", "tests/projects/test_run_workflow.py", module_counts.get("workflow", 0)),
+        ("4", "Platform & Settings", "docs/test_cases/platform_and_settings_test_cases.md", "tests/navigation/ & tests/settings/", module_counts.get("platform", 0)),
     ]
 
     for row_idx, row_values in enumerate(modules_data, start=9):
@@ -211,6 +212,7 @@ def export_all() -> Path:
     files_map = [
         ("auth", "Authentication", DOCS_TC_DIR / "auth_test_cases.md"),
         ("projects", "Projects_and_Workflows", DOCS_TC_DIR / "projects_test_cases.md"),
+        ("workflow", "Runs_and_Workflows", DOCS_TC_DIR / "runs_and_workflow_test_cases.md"),
         ("platform", "Platform_and_Settings", DOCS_TC_DIR / "platform_and_settings_test_cases.md"),
     ]
 
@@ -251,7 +253,7 @@ def export_all() -> Path:
 
     wb.save(OUTPUT_EXCEL)
     print(f"Successfully generated Excel test case catalog: {OUTPUT_EXCEL}")
-    print(f"Total Test Cases Exported: {len(all_rows)} across 3 functional modules.")
+    print(f"Total Test Cases Exported: {len(all_rows)} across 4 functional modules.")
     return OUTPUT_EXCEL
 
 

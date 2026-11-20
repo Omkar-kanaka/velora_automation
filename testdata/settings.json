@@ -41,8 +41,8 @@
       "database": "velora_test",
       "username": "sa",
       "password": "Velora@123Strong",
-      "expected_success": false,
-      "expected_feedback": "Couldn't connect to the database"
+      "expected_success": true,
+      "expected_feedback": "Connection works."
     },
     {
       "name": "Oracle",
@@ -53,14 +53,17 @@
       "database": "FREEPDB1",
       "username": "velora",
       "password": "Velora@123Strong",
-      "expected_success": false,
-      "expected_feedback": "Couldn't connect to the database"
+      "expected_success": true,
+      "expected_feedback": "Connection works."
     }
   ],
   "storage": {
     "temp_edit_path": "C:\\QA\\TempUnsavedPath",
+    "valid_custom_path": "C:\\QA",
     "invalid_path": "Z:\\non_existent_qa_invalid_dir_99999",
+    "malformed_path": "Z:hsdb/sddf/sdvsc",
     "expected_success_text": "Connection works.",
-    "expected_invalid_text": "Can't write to the folder"
+    "expected_invalid_text": "Can't write to the folder",
+    "expected_malformed_text": "Use an absolute path."
   }
 }

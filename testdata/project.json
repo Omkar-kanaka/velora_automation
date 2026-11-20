@@ -26,5 +26,59 @@
     "primary_frd_file": "Test_frd.md",
     "invalid_filename": "unsupported_file.png",
     "expected_invalid_alert": "Only .doc, .docx, .pdf, .md and .txt files can be added."
+  },
+  "hms_workflow": {
+    "project_name": "Hospital Management System",
+    "project_name_prefix": "Hospital Management System",
+    "timeline_end_date": "Jan 30, 2027",
+    "frd_filename": "Test_Hospital_Management_System_FRD (1).pdf",
+    "prompt": "# Project: Hospital Management System (HMS)\n\n## 1. Project Overview\nDevelop a complete, secure, scalable, and user-friendly Hospital Management System (HMS) to manage daily hospital operations, patient records, appointments, doctor schedules, admissions, billing, pharmacy, laboratory, and staff activities.\n\nThe system should centralize hospital operations and provide role-based access to authorized users.\n\n## 2. Technology Stack\n- Frontend: React.js\n- Backend: Python FastAPI\n- Database: MySQL\n- ORM: SQLAlchemy\n- Authentication: JWT-based authentication\n- API: REST APIs\n- Testing: Pytest and Playwright\n- Deployment: Docker\n\n## 3. User Roles and Permissions\n1. Admin\n2. Hospital Receptionist\n3. Doctor\n4. Nurse\n5. Pharmacist\n6. Lab Technician\n7. Billing Executive\n8. Hospital Manager\n\n## 4. Functional Requirements\n- FR-001: User Authentication\n- FR-002: Patient Registration\n- FR-003: Appointment Management\n- FR-004: Doctor Management\n- FR-005: Electronic Medical Records\n- FR-006: Pharmacy Management\n- FR-007: Laboratory Management\n- FR-008: Billing and Payments\n- FR-009: Medication Safety\n- FR-010: Inpatient Management\n- FR-011: Reports and Dashboard\n\n## 5. Non-Functional Requirements\n- NFR-001: Performance API response under 2s",
+    "expected_specs_tabs": [
+      "specification.md",
+      "ui_design.md",
+      "hld.md",
+      "pm.md",
+      "infra.md",
+      "lld.md",
+      "e2e_testing.md",
+      "frontend_testing.md",
+      "backend_testing.md",
+      "design_patterns.md"
+    ],
+    "domain_verification_keywords": [
+      "Hospital Management System",
+      "Patient",
+      "Doctor",
+      "Billing",
+      "FastAPI"
+    ],
+    "stage_two_qa": {
+      "answers_by_keyword": [
+        {
+          "keyword": "industry",
+          "answer": "Healthcare and Hospital Management System operations."
+        },
+        {
+          "keyword": "domain",
+          "answer": "Healthcare and Hospital Management System operations."
+        },
+        {
+          "keyword": "compliance",
+          "answer": "HIPAA compliance and patient data privacy standards."
+        },
+        {
+          "keyword": "regulatory",
+          "answer": "HIPAA compliance and patient data privacy standards."
+        },
+        {
+          "keyword": "clarify before",
+          "answer": "No, go ahead"
+        }
+      ],
+      "fallback_answer": "Complete Hospital Management System implementation covering patient care, billing, pharmacy, and laboratory operations."
+    },
+    "request_changes": {
+      "sample_feedback": "Please add biometrics doctor login and multi-currency billing support."
+    }
   }
 }

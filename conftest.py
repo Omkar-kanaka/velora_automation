@@ -29,6 +29,8 @@ from pages.projects.meeting_notes_modal import MeetingNotesModal
 from pages.projects.new_project_page import NewProjectPage
 from pages.projects.project_detail_page import ProjectDetailPage
 from pages.projects.repository_modal import RepositoryModal
+from pages.projects.run_questions_page import RunQuestionsPage
+from pages.projects.run_specs_page import RunSpecsPage
 from pages.projects_page import ProjectsPage
 from pages.settings_page import SettingsPage
 from utils.artifact_capture import capture_failure_artifacts
@@ -526,6 +528,32 @@ def project_detail_page(
     app_config: BaseConfig,
 ) -> ProjectDetailPage:
     return ProjectDetailPage(
+        page=browser_session.page,
+        base_url=app_config.base_url,
+        default_timeout_ms=app_config.default_timeout_ms,
+        navigation_timeout_ms=app_config.navigation_timeout_ms,
+    )
+
+
+@pytest.fixture(scope="function")
+def run_questions_page(
+    browser_session: BrowserSession,
+    app_config: BaseConfig,
+) -> RunQuestionsPage:
+    return RunQuestionsPage(
+        page=browser_session.page,
+        base_url=app_config.base_url,
+        default_timeout_ms=app_config.default_timeout_ms,
+        navigation_timeout_ms=app_config.navigation_timeout_ms,
+    )
+
+
+@pytest.fixture(scope="function")
+def run_specs_page(
+    browser_session: BrowserSession,
+    app_config: BaseConfig,
+) -> RunSpecsPage:
+    return RunSpecsPage(
         page=browser_session.page,
         base_url=app_config.base_url,
         default_timeout_ms=app_config.default_timeout_ms,

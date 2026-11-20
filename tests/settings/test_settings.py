@@ -61,20 +61,26 @@ def test_database_test_connection_returns_status_feedback(
     settings_page: SettingsPage,
     settings_test_data: dict[str, Any],
 ) -> None:
-    """SET-03: Database Test connection calls backend test endpoint and displays matching UI feedback."""
+    """SET-03: Database Test connection must strictly assert green 'Connection works.' feedback."""
+    postgres_profile = next(
+        p for p in settings_test_data["database_profiles"] if p["name"] == "PostgreSQL"
+    )
     settings_page.open()
     settings_page.open_database_edit_form()
 
-    status_code, payload, feedback_text = settings_page.test_database_connection()
-    settings_page.cancel_database_edit_form()
+    try:
+        settings_page.enter_database_password(postgres_profile["password"])
+        status_code, payload, feedback_text = settings_page.test_database_connection()
 
-    assert status_code == 200
-    assert "ok" in payload
-    if payload["ok"]:
-        assert settings_test_data["database"]["expected_success_text"] in feedback_text
-    else:
-        assert payload.get("error", "") in feedback_text
-        assert feedback_text != ""
+        # Primary assertion: Strictly assert visible UI feedback text on the screen
+        assert feedback_text == settings_test_data["database"]["expected_success_text"], (
+            f"Test connection failed on UI! Expected '{settings_test_data['database']['expected_success_text']}', "
+            f"but UI displayed: '{feedback_text}'"
+        )
+        assert status_code == 200, f"Expected HTTP 200 but received {status_code}"
+        assert payload.get("ok") is True, f"Connection failed with payload error: {payload.get('error')}"
+    finally:
+        settings_page.cancel_database_edit_form()
 
 
 @pytest.mark.regression
@@ -137,16 +143,51 @@ def test_storage_test_connection_succeeds_with_valid_local_path(
     settings_page: SettingsPage,
     settings_test_data: dict[str, Any],
 ) -> None:
-    """SET-06: Storage Test connection succeeds for the active local folder path."""
+    """SET-06: Storage Test connection must strictly assert green 'Connection works.' feedback."""
     settings_page.open()
     settings_page.open_storage_edit_form()
 
-    status_code, payload, feedback_text = settings_page.test_storage_connection()
-    settings_page.cancel_storage_edit_form()
+    try:
+        status_code, payload, feedback_text = settings_page.test_storage_connection()
 
-    assert status_code == 200
-    assert payload.get("ok") is True
-    assert settings_test_data["storage"]["expected_success_text"] in feedback_text
+        # Primary assertion: Strictly assert visible UI feedback text on the screen
+        assert feedback_text == settings_test_data["storage"]["expected_success_text"], (
+            f"Storage test connection failed on UI! Expected '{settings_test_data['storage']['expected_success_text']}', "
+            f"but UI displayed: '{feedback_text}'"
+        )
+        assert status_code == 200, f"Expected HTTP 200 but received {status_code}"
+        assert payload.get("ok") is True, f"Storage test failed with error: {payload.get('error')}"
+    finally:
+        settings_page.cancel_storage_edit_form()
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.tc("SET-06b")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_storage_test_connection_succeeds_with_custom_valid_path(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-06b: Storage Test connection with custom valid path (C:\\QA) strictly asserts green 'Connection works.'."""
+    storage_data = settings_test_data["storage"]
+    settings_page.open()
+    settings_page.open_storage_edit_form()
+
+    try:
+        settings_page.enter_storage_path(storage_data.get("valid_custom_path", "C:\\QA"))
+        status_code, payload, feedback_text = settings_page.test_storage_connection()
+
+        # Primary assertion: Strictly assert visible UI feedback text on the screen
+        assert feedback_text == storage_data["expected_success_text"], (
+            f"Storage test connection failed on UI! Expected '{storage_data['expected_success_text']}', "
+            f"but UI displayed: '{feedback_text}'"
+        )
+        assert status_code == 200, f"Expected HTTP 200 but received {status_code}"
+        assert payload.get("ok") is True, f"Storage test failed with error: {payload.get('error')}"
+    finally:
+        settings_page.cancel_storage_edit_form()
 
 
 @pytest.mark.regression
@@ -164,15 +205,41 @@ def test_storage_test_connection_fails_with_invalid_path_and_cancel_preserves_co
     original_summary = settings_page.get_storage_section_text()
 
     settings_page.open_storage_edit_form()
-    settings_page.enter_storage_path(storage_data["invalid_path"])
-    status_code, payload, feedback_text = settings_page.test_storage_connection()
+    try:
+        settings_page.enter_storage_path(storage_data["invalid_path"])
+        status_code, payload, feedback_text = settings_page.test_storage_connection()
 
-    assert status_code == 200
-    assert payload.get("ok") is False
-    assert storage_data["expected_invalid_text"] in feedback_text
+        assert status_code == 200
+        assert payload.get("ok") is False
+        assert storage_data["expected_invalid_text"] in feedback_text
+    finally:
+        settings_page.cancel_storage_edit_form()
 
-    settings_page.cancel_storage_edit_form()
     assert settings_page.get_storage_section_text() == original_summary
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.ui
+@pytest.mark.tc("SET-07b")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_storage_path_validation_rejects_non_absolute_path(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-07b: Entering non-absolute path displays 'Use an absolute path.' validation error."""
+    storage_data = settings_test_data["storage"]
+    settings_page.open()
+    settings_page.open_storage_edit_form()
+
+    try:
+        settings_page.enter_storage_path(storage_data.get("malformed_path", "Z:hsdb/sddf/sdvsc"))
+        settings_page.click_storage_test_connection_button()
+        error_text = settings_page.get_storage_field_error_text()
+        assert storage_data.get("expected_malformed_text", "Use an absolute path.") in error_text
+    finally:
+        settings_page.cancel_storage_edit_form()
 
 
 @pytest.mark.regression
@@ -199,14 +266,17 @@ def test_settings_database_connectivity_across_profiles(
         settings_page.fill_database_form(profile)
         status_code, payload, feedback_text = settings_page.test_database_connection()
 
-        assert status_code == 200
-        assert "ok" in payload
-        if profile["expected_success"]:
-            assert payload["ok"] is True
-            assert profile["expected_feedback"] in feedback_text
-        else:
-            assert payload["ok"] is False
-            assert profile["expected_feedback"] in feedback_text
+        # Primary assertion: Strictly assert the UI text visible to the user on the screen
+        assert feedback_text == profile["expected_feedback"], (
+            f"Database '{profile_name}' test connection failed on UI! "
+            f"Expected '{profile['expected_feedback']}', but UI displayed: '{feedback_text}'"
+        )
+
+        # Secondary API assertion
+        assert status_code == 200, f"Expected HTTP 200 but received {status_code}"
+        assert payload.get("ok") is True, (
+            f"API returned error for '{profile_name}': {payload.get('error')}"
+        )
     finally:
         settings_page.cancel_database_edit_form()
 

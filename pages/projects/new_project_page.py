@@ -35,6 +35,9 @@ class NewProjectPage(BasePage):
     step_two_start_run_button_name = "Start the run"
     start_run_button_enabled = 'button[type="submit"]:has-text("Start the run"):not([disabled])'
     start_run_button_disabled = 'button[type="submit"]:has-text("Start the run")[disabled]'
+    start_answering_button = 'button:has-text("Start answering")'
+    getting_it_ready_card = 'div:has-text("Getting it ready")'
+    first_question_ready_card = 'div:has-text("Your first question is ready")'
 
     def wait_until_loaded(self) -> None:
         self.wait_for_loading_settled()
@@ -162,3 +165,31 @@ class NewProjectPage(BasePage):
         back_btn = self.page.get_by_role("button", name=self.step_two_back_button_name)
         self.click_locator(back_btn, "Back button on Step 2")
         self.wait_until_loaded()
+
+    def click_start_the_run(self) -> None:
+        """Submit the Step 2 run configuration by clicking 'Start the run'."""
+        button = self.page.locator(self.start_run_button_enabled).first
+        self.click_locator(button, "Start the run button")
+
+    def wait_for_getting_it_ready_settled(self, timeout_ms: int = 60000) -> None:
+        """Wait for the 'Getting it ready' checklist to settle and 'Start answering' card to appear."""
+        self.logger.info("Waiting for run kickoff preparation to settle...")
+        start_answering = self.page.locator(self.start_answering_button).first
+        self.wait_for_visible(start_answering, timeout_ms=timeout_ms)
+
+    def is_start_answering_visible(self, timeout_ms: int = 3000) -> bool:
+        """Check if the blue 'Start answering' card is visible."""
+        return self.is_locator_visible(
+            self.page.locator(self.start_answering_button).first,
+            timeout_ms=timeout_ms,
+        )
+
+    def click_start_answering(self) -> "RunQuestionsPage":
+        """Click 'Start answering' and transition into Stage 2 (Pick my Brain)."""
+        button = self.page.locator(self.start_answering_button).first
+        self.click_locator(button, "Start answering button")
+        from pages.projects.run_questions_page import RunQuestionsPage
+
+        questions_page = RunQuestionsPage(self.page, self.base_url)
+        questions_page.wait_until_loaded()
+        return questions_page
