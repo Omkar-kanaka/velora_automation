@@ -31,6 +31,7 @@ def test_create_hms_run_and_settle_getting_it_ready(
     authenticated_user: UserCredentials,
     new_project_page: NewProjectPage,
     project_test_data: dict[str, Any],
+    track_and_cleanup_project: Any,
 ) -> None:
     """RUN-01: Launch HMS run with full prompt and FRD PDF, then wait for 'Getting it ready' checklist to settle."""
     hms = project_test_data["hms_workflow"]
@@ -53,6 +54,7 @@ def test_create_hms_run_and_settle_getting_it_ready(
     new_project_page.click_start_the_run()
     new_project_page.wait_for_getting_it_ready_settled(timeout_ms=60000)
     assert new_project_page.is_start_answering_visible()
+    track_and_cleanup_project(new_project_page.get_created_project_id())
 
 
 @pytest.mark.smoke
@@ -67,6 +69,7 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     run_questions_page: RunQuestionsPage,
     run_specs_page: RunSpecsPage,
     project_test_data: dict[str, Any],
+    track_and_cleanup_project: Any,
 ) -> None:
     """RUN-01 through RUN-11: Full End-to-End Hospital Management System Run Lifecycle."""
     hms = project_test_data["hms_workflow"]
@@ -92,6 +95,7 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     new_project_page.click_start_the_run()
     new_project_page.wait_for_getting_it_ready_settled(timeout_ms=60000)
     assert new_project_page.is_start_answering_visible()
+    track_and_cleanup_project(new_project_page.get_created_project_id())
 
     # Transition into Stage 2
     new_project_page.click_start_answering()

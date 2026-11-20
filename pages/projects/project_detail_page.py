@@ -45,3 +45,17 @@ class ProjectDetailPage(BasePage):
             self.page.get_by_role("button", name=self.delete_project_button_name).first,
             timeout_ms=3000,
         )
+
+    def delete_current_project(self) -> bool:
+        """Click Delete project on project detail page and confirm deletion."""
+        button = self.page.get_by_role("button", name=self.delete_project_button_name).first
+        if self.is_locator_visible(button, timeout_ms=3000):
+            self.click_locator(button, "Delete project button")
+            confirm_btn = self.page.locator(
+                'button:has-text("Delete"), button:has-text("Confirm"), [role="dialog"] button:has-text("Delete")'
+            ).last
+            if self.is_locator_visible(confirm_btn, timeout_ms=3000):
+                self.click_locator(confirm_btn, "Confirm delete button")
+            self.wait_for_loading_settled()
+            return True
+        return False

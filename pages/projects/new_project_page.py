@@ -188,6 +188,21 @@ class NewProjectPage(BasePage):
             timeout_ms=timeout_ms,
         )
 
+    def get_created_project_id(self) -> str | None:
+        """Extract the project ID from the 'Start answering' link href or current URL."""
+        import re
+
+        match = re.search(r"/projects/([a-zA-Z0-9_-]+)", self.page.url)
+        if match:
+            return match.group(1)
+        start_answering = self.page.locator(self.start_answering_button).first
+        if self.is_locator_visible(start_answering, timeout_ms=2000):
+            href = start_answering.get_attribute("href") or ""
+            match = re.search(r"/projects/([a-zA-Z0-9_-]+)", href)
+            if match:
+                return match.group(1)
+        return None
+
     def click_start_answering(self) -> "RunQuestionsPage":
         """Click 'Start answering' and transition into Stage 2 (Pick my Brain)."""
         button = self.page.locator(self.start_answering_button).first
