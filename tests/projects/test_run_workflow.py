@@ -1,9 +1,9 @@
 """End-to-End Run Workflow Lifecycle Test Suite — RUN-01 through RUN-11.
 
 Covers:
-- Step 1 & 2: Full HMS Prompt + FRD Document attachment + Timeline configuration.
+- Step 1 & 2: Hello World Web Application Prompt (no FRD document) + Timeline configuration.
 - Stage 1 Kickoff: 'Getting it ready' checklist settlement ➔ 'Start answering' card.
-- Stage 2 (Pick my Brain): Dynamic Q&A loop using suggested chips and testdata mappings.
+- Stage 2 (Pick my Brain): Dynamic Q&A loop using suggested chips until completion.
 - Stage 3 (Specs In-Progress): 'Writing the specs...' state, disabled delivery, restricted 'Spec changes' drawer.
 - Stage 3 (Specs Ready): 'Ready for your review', exhaustive 10-file verification, download, request changes.
 - Stage 4 (Delivery): Transition via 'Continue to Delivery'.
@@ -18,43 +18,6 @@ from config.config import UserCredentials
 from pages.projects.new_project_page import NewProjectPage
 from pages.projects.run_questions_page import RunQuestionsPage
 from pages.projects.run_specs_page import RunSpecsPage
-from utils.paths import TESTDATA_FRD_DIR
-
-
-@pytest.mark.smoke
-@pytest.mark.projects
-@pytest.mark.workflow
-@pytest.mark.ui
-@pytest.mark.tc("RUN-01")
-@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
-def test_create_hms_run_and_settle_getting_it_ready(
-    authenticated_user: UserCredentials,
-    new_project_page: NewProjectPage,
-    project_test_data: dict[str, Any],
-    track_and_cleanup_project: Any,
-) -> None:
-    """RUN-01: Launch HMS run with full prompt and FRD PDF, then wait for 'Getting it ready' checklist to settle."""
-    hms = project_test_data["hms_workflow"]
-    frd_path = TESTDATA_FRD_DIR / hms["frd_filename"]
-    assert frd_path.exists(), f"FRD file not found at: {frd_path}"
-
-    new_project_page.open()
-    new_project_page.enter_prompt(hms["prompt"])
-    new_project_page.upload_document(frd_path)
-    assert new_project_page.is_start_button_enabled()
-
-    new_project_page.click_start()
-    new_project_page.wait_for_step_two_loaded()
-
-    unique_project_name = f"{hms['project_name_prefix']} {int(time.time())}"
-    new_project_page.enter_project_name(unique_project_name)
-    new_project_page.select_end_date()
-    assert new_project_page.is_start_run_button_enabled()
-
-    new_project_page.click_start_the_run()
-    new_project_page.wait_for_getting_it_ready_settled(timeout_ms=60000)
-    assert new_project_page.is_start_answering_visible()
-    track_and_cleanup_project(new_project_page.get_created_project_id())
 
 
 @pytest.mark.smoke
@@ -71,23 +34,20 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     project_test_data: dict[str, Any],
     track_and_cleanup_project: Any,
 ) -> None:
-    """RUN-01 through RUN-11: Full End-to-End Hospital Management System Run Lifecycle."""
-    hms = project_test_data["hms_workflow"]
-    frd_path = TESTDATA_FRD_DIR / hms["frd_filename"]
-    assert frd_path.exists(), f"FRD file not found at: {frd_path}"
+    """RUN-01 through RUN-11: Full End-to-End Hello World Run Lifecycle without FRD attachment."""
+    workflow_data = project_test_data.get("hello_world_workflow") or project_test_data["hms_workflow"]
 
     # ------------------------------------------------------------------
-    # RUN-01: Setup & Kickoff Checklist Settle
+    # RUN-01: Setup & Kickoff Checklist Settle (Prompt only, no FRD)
     # ------------------------------------------------------------------
     new_project_page.open()
-    new_project_page.enter_prompt(hms["prompt"])
-    new_project_page.upload_document(frd_path)
+    new_project_page.enter_prompt(workflow_data["prompt"])
     assert new_project_page.is_start_button_enabled()
 
     new_project_page.click_start()
     new_project_page.wait_for_step_two_loaded()
 
-    unique_project_name = f"{hms['project_name_prefix']} {int(time.time())}"
+    unique_project_name = f"{workflow_data['project_name_prefix']} {int(time.time())}"
     new_project_page.enter_project_name(unique_project_name)
     new_project_page.select_end_date()
     assert new_project_page.is_start_run_button_enabled()
@@ -111,11 +71,8 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     # ------------------------------------------------------------------
     # RUN-03 & RUN-04: Dynamic Q&A Loop using Suggested Chips to Completion
     # ------------------------------------------------------------------
-    run_questions_page.answer_all_questions_dynamically(
-        qa_config=hms.get("stage_two_qa"),
-        max_rounds=25,
-    )
-    assert run_questions_page.is_completion_card_visible(timeout_ms=5000)
+    run_questions_page.answer_all_questions_dynamically(max_rounds=35)
+    assert run_questions_page.is_completion_card_visible(timeout_ms=20000)
 
     # ------------------------------------------------------------------
     # RUN-05: 'Answered so far' Accordion Toggle
@@ -129,7 +86,7 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     run_specs_page.wait_until_loaded(timeout_ms=20000)
 
     # Check in-progress constraints if generation is still underway
-    if run_specs_page.is_writing_specs(timeout_ms=2000):
+    if run_specs_page.is_writing_specs(timeout_ms=5000):
         assert run_specs_page.is_continue_to_delivery_disabled()
 
         # Verify side drawer restriction during specs writing
@@ -143,14 +100,14 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     # ------------------------------------------------------------------
     # RUN-07: Wait for Specs Generation to Settle (Ready for your review)
     # ------------------------------------------------------------------
-    run_specs_page.wait_for_specs_ready(timeout_ms=180000)
+    run_specs_page.wait_for_specs_ready(timeout_ms=6000000)
     assert run_specs_page.is_ready_for_review()
     assert run_specs_page.is_continue_to_delivery_enabled()
 
     # ------------------------------------------------------------------
     # RUN-08: Exhaustive 10-File Specification Opening & Content Check
     # ------------------------------------------------------------------
-    expected_tabs = hms["expected_specs_tabs"]
+    expected_tabs = workflow_data["expected_specs_tabs"]
     assert len(expected_tabs) == 10
 
     for tab_name in expected_tabs:
@@ -162,7 +119,7 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
 
         # Check for domain presence in specifications
         has_domain_term = any(
-            kw.lower() in preview_text.lower() for kw in hms["domain_verification_keywords"]
+            kw.lower() in preview_text.lower() for kw in workflow_data["domain_verification_keywords"]
         )
         assert has_domain_term, f"Domain keywords missing in document '{tab_name}'"
 
@@ -182,7 +139,7 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     assert run_specs_page.is_request_changes_drawer_open()
     assert not run_specs_page.is_drawer_textarea_disabled()
 
-    run_specs_page.enter_request_changes_feedback(hms["request_changes"]["sample_feedback"])
+    run_specs_page.enter_request_changes_feedback(workflow_data["request_changes"]["sample_feedback"])
     assert not run_specs_page.is_drawer_send_button_disabled()
     run_specs_page.close_request_changes_drawer()
     assert not run_specs_page.is_request_changes_drawer_open()

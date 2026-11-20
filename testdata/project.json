@@ -28,11 +28,10 @@
     "expected_invalid_alert": "Only .doc, .docx, .pdf, .md and .txt files can be added."
   },
   "hms_workflow": {
-    "project_name": "Hospital Management System",
-    "project_name_prefix": "Hospital Management System",
+    "project_name": "Hello World Web Application",
+    "project_name_prefix": "Hello World",
     "timeline_end_date": "Jan 30, 2027",
-    "frd_filename": "Test_Hospital_Management_System_FRD (1).pdf",
-    "prompt": "# Project: Hospital Management System (HMS)\n\n## 1. Project Overview\nDevelop a complete, secure, scalable, and user-friendly Hospital Management System (HMS) to manage daily hospital operations, patient records, appointments, doctor schedules, admissions, billing, pharmacy, laboratory, and staff activities.\n\nThe system should centralize hospital operations and provide role-based access to authorized users.\n\n## 2. Technology Stack\n- Frontend: React.js\n- Backend: Python FastAPI\n- Database: MySQL\n- ORM: SQLAlchemy\n- Authentication: JWT-based authentication\n- API: REST APIs\n- Testing: Pytest and Playwright\n- Deployment: Docker\n\n## 3. User Roles and Permissions\n1. Admin\n2. Hospital Receptionist\n3. Doctor\n4. Nurse\n5. Pharmacist\n6. Lab Technician\n7. Billing Executive\n8. Hospital Manager\n\n## 4. Functional Requirements\n- FR-001: User Authentication\n- FR-002: Patient Registration\n- FR-003: Appointment Management\n- FR-004: Doctor Management\n- FR-005: Electronic Medical Records\n- FR-006: Pharmacy Management\n- FR-007: Laboratory Management\n- FR-008: Billing and Payments\n- FR-009: Medication Safety\n- FR-010: Inpatient Management\n- FR-011: Reports and Dashboard\n\n## 5. Non-Functional Requirements\n- NFR-001: Performance API response under 2s",
+    "prompt": "# Project: Hello World Web Application\n\nAct as a Senior Full-Stack Python Developer. Create a simple, beginner-friendly web application that displays **\"Hello World!\"** on a webpage using Python, FastAPI, and PostgreSQL.\n\n## 1. Technology Stack\n\n- **Backend:** Python 3.11+ with FastAPI\n- **Database:** PostgreSQL\n- **ORM:** SQLAlchemy\n- **Frontend:** HTML, CSS, and JavaScript\n- **API Testing:** Swagger UI\n- **Server:** Uvicorn\n\n## 2. Functional Requirements\n\n1. Create a webpage with a clean and simple UI.\n2. Display a heading saying \"Hello World!\" on the webpage.\n3. Create a FastAPI backend application.\n4. Create a GET API endpoint `/api/hello`.\n5. When the frontend loads, call `/api/hello` using JavaScript Fetch API.\n6. The backend should return the following JSON response:\n\n   {\n     \"message\": \"Hello World!\"\n   }\n\n7. Display the message received from the backend on the webpage.\n8. Connect the FastAPI backend to PostgreSQL.\n9. Create a database named `hello_world_db`.\n10. Create a simple database table named `messages` to store the Hello World message.\n11. Fetch the message from PostgreSQL through the backend API instead of hardcoding it in the frontend.\n\n## 3. Project Structure\n\nCreate the following folder structure:\n\nhello-world-project/\n- backend/\n  - app/\n    - main.py\n    - database.py\n    - models.py\n    - routes.py\n  - requirements.txt\n  - .env\n- frontend/\n  - index.html\n  - style.css\n  - script.js\n- README.md\n\n## 4. Database Requirements\n\n- Configure PostgreSQL database connectivity.\n- Use SQLAlchemy for database operations.\n- Create the `messages` table automatically if it does not exist.\n- Insert the default \"Hello World!\" message if the table is empty.\n- Fetch the message from PostgreSQL when the API is called.\n- Store database credentials in the `.env` file.\n- Never hardcode database credentials in Python files.\n\n## 5. API Requirements\n\nImplement the following endpoint:\n\n**GET /api/hello**\n\nExpected response:\n\n{\n  \"message\": \"Hello World!\"\n}\n\nAlso enable FastAPI Swagger documentation at `/docs`.\n\n## 6. UI Requirements\n\n- Create a simple, attractive webpage.\n- Display \"Hello World!\" in the center of the page.\n- Use basic CSS for styling.\n- Display the message dynamically from the backend API.\n- Show a meaningful error message if the backend is unavailable.\n\n## 7. Code Quality Requirements\n\n- Follow Python coding best practices.\n- Use modular and reusable code.\n- Add comments wherever necessary.\n- Handle database connection errors.\n- Use environment variables for configurations.\n- Keep the implementation simple and beginner-friendly.\n- Avoid unnecessary complexity.\n\n## 8. Execution Instructions\n\nProvide detailed instructions for:\n\n1. Installing Python dependencies.\n2. Creating the PostgreSQL database.\n3. Configuring the `.env` file.\n4. Starting the FastAPI backend using Uvicorn.\n5. Opening the frontend webpage.\n6. Testing the API through Swagger UI.\n\n## 9. Expected Output\n\nWhen I open the webpage in my browser, I should see:\n\n**Hello World!**\n\nThe message must be fetched from the PostgreSQL database through the FastAPI backend.\n\n## 10. Final Deliverables\n\nGenerate:\n- Complete backend source code.\n- Complete frontend source code.\n- PostgreSQL database setup instructions.\n- requirements.txt.\n- .env.example.\n- README.md with step-by-step execution instructions.\n\nMake sure the entire application works end-to-end. Do not provide pseudocode or incomplete implementations. Generate actual working code for every file.",
     "expected_specs_tabs": [
       "specification.md",
       "ui_design.md",
@@ -46,39 +45,42 @@
       "design_patterns.md"
     ],
     "domain_verification_keywords": [
-      "Hospital Management System",
-      "Patient",
-      "Doctor",
-      "Billing",
-      "FastAPI"
+      "Hello World",
+      "FastAPI",
+      "PostgreSQL",
+      "SQLAlchemy",
+      "Python"
     ],
-    "stage_two_qa": {
-      "answers_by_keyword": [
-        {
-          "keyword": "industry",
-          "answer": "Healthcare and Hospital Management System operations."
-        },
-        {
-          "keyword": "domain",
-          "answer": "Healthcare and Hospital Management System operations."
-        },
-        {
-          "keyword": "compliance",
-          "answer": "HIPAA compliance and patient data privacy standards."
-        },
-        {
-          "keyword": "regulatory",
-          "answer": "HIPAA compliance and patient data privacy standards."
-        },
-        {
-          "keyword": "clarify before",
-          "answer": "No, go ahead"
-        }
-      ],
-      "fallback_answer": "Complete Hospital Management System implementation covering patient care, billing, pharmacy, and laboratory operations."
-    },
     "request_changes": {
-      "sample_feedback": "Please add biometrics doctor login and multi-currency billing support."
+      "sample_feedback": "Please add an endpoint to update the greeting message dynamically in PostgreSQL."
+    }
+  },
+  "hello_world_workflow": {
+    "project_name": "Hello World Web Application",
+    "project_name_prefix": "Hello World",
+    "timeline_end_date": "Jan 30, 2027",
+    "prompt": "# Project: Hello World Web Application\n\nAct as a Senior Full-Stack Python Developer. Create a simple, beginner-friendly web application that displays **\"Hello World!\"** on a webpage using Python, FastAPI, and PostgreSQL.\n\n## 1. Technology Stack\n\n- **Backend:** Python 3.11+ with FastAPI\n- **Database:** PostgreSQL\n- **ORM:** SQLAlchemy\n- **Frontend:** HTML, CSS, and JavaScript\n- **API Testing:** Swagger UI\n- **Server:** Uvicorn\n\n## 2. Functional Requirements\n\n1. Create a webpage with a clean and simple UI.\n2. Display a heading saying \"Hello World!\" on the webpage.\n3. Create a FastAPI backend application.\n4. Create a GET API endpoint `/api/hello`.\n5. When the frontend loads, call `/api/hello` using JavaScript Fetch API.\n6. The backend should return the following JSON response:\n\n   {\n     \"message\": \"Hello World!\"\n   }\n\n7. Display the message received from the backend on the webpage.\n8. Connect the FastAPI backend to PostgreSQL.\n9. Create a database named `hello_world_db`.\n10. Create a simple database table named `messages` to store the Hello World message.\n11. Fetch the message from PostgreSQL through the backend API instead of hardcoding it in the frontend.\n\n## 3. Project Structure\n\nCreate the following folder structure:\n\nhello-world-project/\n- backend/\n  - app/\n    - main.py\n    - database.py\n    - models.py\n    - routes.py\n  - requirements.txt\n  - .env\n- frontend/\n  - index.html\n  - style.css\n  - script.js\n- README.md\n\n## 4. Database Requirements\n\n- Configure PostgreSQL database connectivity.\n- Use SQLAlchemy for database operations.\n- Create the `messages` table automatically if it does not exist.\n- Insert the default \"Hello World!\" message if the table is empty.\n- Fetch the message from PostgreSQL when the API is called.\n- Store database credentials in the `.env` file.\n- Never hardcode database credentials in Python files.\n\n## 5. API Requirements\n\nImplement the following endpoint:\n\n**GET /api/hello**\n\nExpected response:\n\n{\n  \"message\": \"Hello World!\"\n}\n\nAlso enable FastAPI Swagger documentation at `/docs`.\n\n## 6. UI Requirements\n\n- Create a simple, attractive webpage.\n- Display \"Hello World!\" in the center of the page.\n- Use basic CSS for styling.\n- Display the message dynamically from the backend API.\n- Show a meaningful error message if the backend is unavailable.\n\n## 7. Code Quality Requirements\n\n- Follow Python coding best practices.\n- Use modular and reusable code.\n- Add comments wherever necessary.\n- Handle database connection errors.\n- Use environment variables for configurations.\n- Keep the implementation simple and beginner-friendly.\n- Avoid unnecessary complexity.\n\n## 8. Execution Instructions\n\nProvide detailed instructions for:\n\n1. Installing Python dependencies.\n2. Creating the PostgreSQL database.\n3. Configuring the `.env` file.\n4. Starting the FastAPI backend using Uvicorn.\n5. Opening the frontend webpage.\n6. Testing the API through Swagger UI.\n\n## 9. Expected Output\n\nWhen I open the webpage in my browser, I should see:\n\n**Hello World!**\n\nThe message must be fetched from the PostgreSQL database through the FastAPI backend.\n\n## 10. Final Deliverables\n\nGenerate:\n- Complete backend source code.\n- Complete frontend source code.\n- PostgreSQL database setup instructions.\n- requirements.txt.\n- .env.example.\n- README.md with step-by-step execution instructions.\n\nMake sure the entire application works end-to-end. Do not provide pseudocode or incomplete implementations. Generate actual working code for every file.",
+    "expected_specs_tabs": [
+      "specification.md",
+      "ui_design.md",
+      "hld.md",
+      "pm.md",
+      "infra.md",
+      "lld.md",
+      "e2e_testing.md",
+      "frontend_testing.md",
+      "backend_testing.md",
+      "design_patterns.md"
+    ],
+    "domain_verification_keywords": [
+      "Hello World",
+      "FastAPI",
+      "PostgreSQL",
+      "SQLAlchemy",
+      "Python"
+    ],
+    "request_changes": {
+      "sample_feedback": "Please add an endpoint to update the greeting message dynamically in PostgreSQL."
     }
   }
 }
