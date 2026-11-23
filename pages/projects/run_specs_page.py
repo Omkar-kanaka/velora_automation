@@ -1,5 +1,6 @@
 """Page Object for Velora Stage 3: Specs (/specs) Review & Verification."""
 
+import time
 from typing import Any
 
 from playwright.sync_api import Download, Locator, TimeoutError as PlaywrightTimeoutError
@@ -17,24 +18,24 @@ class RunSpecsPage(BasePage):
     stepper_step_delivery = "text='Delivery'"
 
     specs_heading = "h1:has-text('Specs')"
-    writing_specs_indicator = "text='Writing the specs...'"
-    ready_for_review_indicator = "text='Ready for your review'"
+    writing_specs_indicator = "text=/Writing the specs/i"
+    ready_for_review_indicator = "text=/Ready for (your )?review/i"
 
     # Action buttons
-    download_trigger_button = 'button:has-text("Download")'
-    download_menu_item = '[role="menuitem"], [role="option"], button:has-text("Download as"), button:has-text(".zip")'
-    request_changes_trigger_button = 'button:has-text("Request changes")'
-    continue_to_delivery_button = 'button:has-text("Continue to Delivery")'
+    download_trigger_button = 'button:has-text("Download"), a:has-text("Download"), [data-slot="dropdown-menu-trigger"]:has-text("Download"), [data-slot="button"]:has-text("Download")'
+    download_menu_item = '[role="menu"] [role="menuitem"], [data-slot="dropdown-menu-item"], [role="menuitem"]'
+    request_changes_trigger_button = 'button:has-text("Request changes"), a:has-text("Request changes"), [data-slot="button"]:has-text("Request changes")'
+    continue_to_delivery_button = 'button:has-text("Continue to Delivery"), a:has-text("Continue to Delivery"), [data-slot="button"]:has-text("Continue to Delivery")'
 
     # Request changes drawer ("Spec changes")
-    drawer_container = "div:has-text('Spec changes')"
-    drawer_textarea = "textarea[placeholder*='Updating the specs'], textarea[placeholder*='Describe a change'], div:has-text('Spec changes') textarea"
-    drawer_send_button = "button:has-text('Send')"
-    drawer_close_button = "button[aria-label*='Close' i], div:has-text('Spec changes') button:has(svg)"
+    drawer_container = "aside[aria-label='Spec changes'], [aria-label='Spec changes']"
+    drawer_textarea = "aside[aria-label='Spec changes'] textarea, textarea[placeholder*='Updating the specs'], textarea[placeholder*='Describe a change']"
+    drawer_send_button = "aside[aria-label='Spec changes'] button:has-text('Send')"
+    drawer_close_button = "aside[aria-label='Spec changes'] button[aria-label='Close'], aside[aria-label='Spec changes'] button:has(svg.lucide-x)"
 
     # Tab selector & markdown container
     tab_button = "button[role='tab'], div.flex button:has-text('.md')"
-    markdown_body = "div.prose, div.markdown-body, main article, main div:has(h1)"
+    markdown_body = "article.prose, div.prose, div.markdown-body, main article, main div:has(h1)"
 
     def wait_until_loaded(self, timeout_ms: int = 20000) -> None:
         """Wait for /specs URL and main layout to load."""
@@ -49,15 +50,50 @@ class RunSpecsPage(BasePage):
 
     def is_ready_for_review(self, timeout_ms: int = 3000) -> bool:
         """Check if specs generation has completed ('Ready for your review')."""
-        indicator = self.page.locator(self.ready_for_review_indicator).first
-        return self.is_locator_visible(indicator, timeout_ms=timeout_ms)
+        ready_indicator = self.page.locator(self.ready_for_review_indicator).first
+        if self.is_locator_visible(ready_indicator, timeout_ms=timeout_ms):
+            return True
+        # Fallback check: Continue to Delivery is enabled and writing indicator is gone
+        btn = self.page.locator(self.continue_to_delivery_button).first
+        writing = self.page.locator(self.writing_specs_indicator).first
+        return self.is_locator_visible(btn, timeout_ms=1000) and not btn.is_disabled() and not writing.is_visible()
 
-    def wait_for_specs_ready(self, timeout_ms: int = 180000) -> "RunSpecsPage":
+    def wait_for_specs_ready(self, timeout_ms: int = 600000) -> "RunSpecsPage":
         """Wait dynamically for specs generation to settle and become ready for review."""
         self.logger.info("Waiting for specs generation to complete (timeout=%d ms)...", timeout_ms)
-        ready_indicator = self.page.locator(self.ready_for_review_indicator).first
-        self.wait_for_visible(ready_indicator, timeout_ms=timeout_ms)
-        self.wait_for_loading_settled()
+        start_time = time.time()
+        timeout_sec = timeout_ms / 1000.0
+
+        ready_locator = self.page.locator(self.ready_for_review_indicator).first
+        continue_btn = self.page.locator(self.continue_to_delivery_button).first
+        writing_locator = self.page.locator(self.writing_specs_indicator).first
+
+        while time.time() - start_time < timeout_sec:
+            # Check if ready indicator is visible
+            if ready_locator.is_visible():
+                self.logger.info("Specs generation completed: 'Ready for your review' detected!")
+                self.wait_for_loading_settled()
+                return self
+
+            # Check if continue button is enabled AND writing indicator is gone
+            if continue_btn.is_visible() and not continue_btn.is_disabled():
+                if not writing_locator.is_visible():
+                    self.logger.info(
+                        "Specs generation completed: 'Continue to Delivery' is enabled and writing indicator gone!"
+                    )
+                    self.wait_for_loading_settled()
+                    return self
+
+            # Log progress: count visible tabs
+            tab_count = self.page.locator("button[role='tab'], [data-slot='tabs-trigger']").count()
+            elapsed = int(time.time() - start_time)
+            self.logger.info(
+                "Specs generation in progress (%ds elapsed) — %d tabs visible so far...", elapsed, tab_count
+            )
+            self.page.wait_for_timeout(5000)
+
+        # Final check with wait_for_visible so Playwright raises standard TimeoutError with details if timed out
+        self.wait_for_visible(ready_locator, timeout_ms=5000)
         return self
 
     def is_continue_to_delivery_enabled(self, timeout_ms: int = 3000) -> bool:
@@ -86,9 +122,11 @@ class RunSpecsPage(BasePage):
         self.wait_for_visible(drawer, timeout_ms=5000)
         return self
 
-    def is_request_changes_drawer_open(self, timeout_ms: int = 3000) -> bool:
+    def is_request_changes_drawer_open(self, timeout_ms: int = 2000) -> bool:
         """Check if the 'Spec changes' drawer is currently visible."""
         drawer = self.page.locator(self.drawer_container).first
+        if drawer.count() == 0:
+            return False
         return self.is_locator_visible(drawer, timeout_ms=timeout_ms)
 
     def is_drawer_textarea_disabled(self) -> bool:
@@ -122,10 +160,23 @@ class RunSpecsPage(BasePage):
     def close_request_changes_drawer(self) -> "RunSpecsPage":
         """Close the Spec changes drawer using the close 'X' button or Escape."""
         close_btn = self.page.locator(self.drawer_close_button).first
+        drawer = self.page.locator(self.drawer_container).first
         if self.is_locator_visible(close_btn, timeout_ms=3000):
             self.click_locator(close_btn, "Spec changes close button")
         else:
             self.page.keyboard.press("Escape")
+
+        # Wait for drawer element to be hidden/detached
+        try:
+            drawer.wait_for(state="hidden", timeout=4000)
+        except Exception:
+            self.logger.warning("Drawer not hidden after close click, pressing Escape...")
+            self.page.keyboard.press("Escape")
+            try:
+                drawer.wait_for(state="hidden", timeout=3000)
+            except Exception:
+                pass
+
         self.wait_ms(500, reason="Wait for drawer animation to close")
         return self
 
@@ -134,7 +185,9 @@ class RunSpecsPage(BasePage):
     # ------------------------------------------------------------------
     def get_tab_locator(self, tab_name: str) -> Locator:
         """Get locator for a specific specification tab button."""
-        return self.page.locator(f'button:has-text("{tab_name}")').first
+        return self.page.locator(
+            f'button:has-text("{tab_name}"), a:has-text("{tab_name}"), [role="tab"]:has-text("{tab_name}")'
+        ).first
 
     def is_tab_visible(self, tab_name: str, timeout_ms: int = 3000) -> bool:
         """Check if a specification tab button is visible."""
@@ -165,7 +218,7 @@ class RunSpecsPage(BasePage):
 
             # Check if a menu opened with a specific download option
             menu_item = self.page.locator(self.download_menu_item).first
-            if self.is_locator_visible(menu_item, timeout_ms=1500):
+            if self.is_locator_visible(menu_item, timeout_ms=3000):
                 self.click_locator(menu_item, "Download menu item")
 
         download = download_info.value

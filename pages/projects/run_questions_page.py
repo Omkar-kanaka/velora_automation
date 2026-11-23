@@ -1,8 +1,9 @@
 """Page Object for Velora Stage 2: Pick my Brain (/questions)."""
 
+import time
 from typing import TYPE_CHECKING, Any
 
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Locator, TimeoutError as PlaywrightTimeoutError
 
 from pages.base_page import BasePage
 
@@ -21,14 +22,29 @@ class RunQuestionsPage(BasePage):
 
     # Question interaction locators
     waiting_for_you_badge = "text='Waiting for you'"
-    question_heading = "main h2, main h3, main div.font-semibold, main p.font-semibold"
-    suggested_chip = 'button:has-text("Suggested:")'
+    question_heading = (
+        'div:has-text("Waiting for you") p.text-lg, '
+        'p.text-lg, '
+        'main h2, '
+        'main h3, '
+        'main div.font-semibold, '
+        'main p.font-semibold'
+    )
+    suggested_chip = (
+        'button:has-text("Suggested"), '
+        '[data-slot="button"]:has-text("Suggested")'
+    )
     answer_textarea = 'main textarea[placeholder*="Type your answer"], main textarea'
     submit_answer_button = 'button:has-text("Submit answer")'
+    submit_answer_button_enabled = 'button:has-text("Submit answer"):not([disabled])'
 
     # Completion state locators
     completion_banner = "text=\"That's everything for now\""
-    continue_to_specs_button = 'button:has-text("Continue to Specs")'
+    continue_to_specs_button = (
+        'button:has-text("Continue to Specs"), '
+        'a:has-text("Continue to Specs"), '
+        '[data-slot="button"]:has-text("Continue to Specs")'
+    )
     answered_so_far_header = 'button:has-text("Answered so far"), div:has-text("Answered so far")'
     answered_toggle_button = 'button:has-text("Hide"), button:has-text("Show")'
 
@@ -41,32 +57,99 @@ class RunQuestionsPage(BasePage):
     def has_unanswered_question(self, timeout_ms: int = 3000) -> bool:
         """Return True if an active unanswered question card is displayed."""
         submit_btn = self.page.locator(self.submit_answer_button).first
-        return self.is_locator_visible(submit_btn, timeout_ms=timeout_ms)
+        textarea = self.page.locator(self.answer_textarea).first
+        badge = self.page.locator(self.waiting_for_you_badge).first
+        suggested = self.page.locator(self.suggested_chip).first
+        return (
+            self.is_locator_visible(submit_btn, timeout_ms=timeout_ms)
+            or self.is_locator_visible(textarea, timeout_ms=500)
+            or self.is_locator_visible(badge, timeout_ms=500)
+            or self.is_locator_visible(suggested, timeout_ms=500)
+        )
+
+    def is_completion_card_visible(self, timeout_ms: int = 3000) -> bool:
+        """Check if 'That's everything for now' card or 'Continue to Specs' button is visible."""
+        continue_btn = self.page.locator(self.continue_to_specs_button).first
+        return self.is_locator_visible(continue_btn, timeout_ms=timeout_ms)
+
+    def wait_for_next_round_or_completion(self, timeout_ms: int = 35000) -> str:
+        """Wait dynamically for either a new question or the completion card to appear.
+
+        Returns:
+            'completion' if 'Continue to Specs' or completion card is visible.
+            'question' if an active question is visible.
+            'timeout' if neither is visible within timeout_ms.
+        """
+        start = time.time()
+        timeout_sec = timeout_ms / 1000.0
+
+        while time.time() - start < timeout_sec:
+            if self.is_completion_card_visible(timeout_ms=500):
+                return "completion"
+            if self.has_unanswered_question(timeout_ms=500):
+                return "question"
+            self.page.wait_for_timeout(500)
+
+        # Final check
+        if self.is_completion_card_visible(timeout_ms=1000):
+            return "completion"
+        if self.has_unanswered_question(timeout_ms=1000):
+            return "question"
+        return "timeout"
 
     def get_current_question_text(self) -> str:
-        """Extract current question heading text."""
+        """Extract current question text using textarea aria-label or question card paragraph."""
+        # 1. From textarea aria-label (accessible property set by Velora UI)
+        textarea = self.page.locator(self.answer_textarea).first
+        if self.is_locator_visible(textarea, timeout_ms=1500):
+            aria_label = textarea.get_attribute("aria-label") or ""
+            if len(aria_label.strip()) > 5:
+                return aria_label.strip()
+
+        # 2. From paragraph inside question card
+        card_p = self.page.locator('div:has-text("Waiting for you") p.text-lg, p.text-lg').first
+        if self.is_locator_visible(card_p, timeout_ms=1500):
+            text = card_p.inner_text().strip()
+            if len(text) > 5:
+                return text
+
+        # 3. Fallback scan of heading elements
         headings = self.page.locator(self.question_heading)
         for i in range(headings.count()):
             text = headings.nth(i).inner_text().strip()
-            if text and not any(skip in text for skip in ["Projects", "Pick my Brain", "Waiting for you", "Answered"]):
+            if len(text) > 5 and not any(skip in text for skip in ["Projects", "Pick my Brain", "Waiting for you", "Answered"]):
                 return text
         return ""
 
+    def get_suggested_chip_locator(self) -> Locator:
+        """Get the locator for the suggested answer chip or button."""
+        # 1. Primary: Button with 'Suggested' text
+        chip = self.page.locator(self.suggested_chip).first
+        if chip.count() > 0 and chip.is_visible():
+            return chip
+
+        # 2. Secondary: Fallback to the first action button on the question card (//button[@data-slot="button"])[1]
+        fallback_chip = self.page.locator('xpath=(//button[@data-slot="button"])[1]').first
+        if fallback_chip.count() > 0 and fallback_chip.is_visible():
+            return fallback_chip
+
+        return chip
+
     def has_suggested_chip(self, timeout_ms: int = 2000) -> bool:
         """Check if a '💡 Suggested: ...' chip is available for the current question."""
-        chip = self.page.locator(self.suggested_chip).first
+        chip = self.get_suggested_chip_locator()
         return self.is_locator_visible(chip, timeout_ms=timeout_ms)
 
     def get_suggested_chip_text(self) -> str:
         """Extract the text inside the suggested chip."""
-        chip = self.page.locator(self.suggested_chip).first
+        chip = self.get_suggested_chip_locator()
         if chip.count() > 0 and chip.is_visible():
             return chip.inner_text().strip()
         return ""
 
     def click_suggested_chip(self) -> "RunQuestionsPage":
         """Click the suggested answer chip to populate the textarea."""
-        chip = self.page.locator(self.suggested_chip).first
+        chip = self.get_suggested_chip_locator()
         self.click_locator(chip, "Suggested answer chip")
         return self
 
@@ -78,7 +161,8 @@ class RunQuestionsPage(BasePage):
 
     def submit_answer(self) -> "RunQuestionsPage":
         """Click 'Submit answer' and wait for loading settlement."""
-        submit_btn = self.page.locator(self.submit_answer_button).first
+        submit_btn = self.page.locator(self.submit_answer_button_enabled).first
+        self.wait_for_visible(submit_btn, timeout_ms=5000)
         self.click_locator(submit_btn, "Submit answer button")
         self.wait_for_loading_settled(timeout_ms=10000)
         return self
@@ -90,52 +174,41 @@ class RunQuestionsPage(BasePage):
         elif self.has_suggested_chip():
             self.click_suggested_chip()
         else:
-            self.fill_custom_answer("Confirmed and aligned with functional requirements.")
+            self.fill_custom_answer("Confirmed and aligned with requirements.")
         self.submit_answer()
         return self
 
-    def is_completion_card_visible(self, timeout_ms: int = 3000) -> bool:
-        """Check if 'That's everything for now' card or 'Continue to Specs' button is visible."""
-        continue_btn = self.page.locator(self.continue_to_specs_button).first
-        return self.is_locator_visible(continue_btn, timeout_ms=timeout_ms)
-
     def answer_all_questions_dynamically(
         self,
-        qa_config: dict[str, Any] | None = None,
-        max_rounds: int = 25,
+        max_rounds: int = 35,
     ) -> "RunQuestionsPage":
-        """Loop through all dynamic questions until the completion card is displayed."""
+        """Loop through all dynamic questions by clicking suggested answers until completion card appears."""
         self.logger.info("Starting dynamic question answering loop (max_rounds=%d)...", max_rounds)
 
         for round_idx in range(1, max_rounds + 1):
-            if self.is_completion_card_visible(timeout_ms=2500):
+            state = self.wait_for_next_round_or_completion(timeout_ms=35000)
+            if state == "completion":
                 self.logger.info("Completion card reached after %d rounds.", round_idx - 1)
                 break
-
-            if not self.has_unanswered_question(timeout_ms=5000):
-                self.logger.info("No unanswered question found at round %d.", round_idx)
+            if state == "timeout":
+                self.logger.warning(
+                    "Neither a question nor completion card appeared within 35s at round %d.", round_idx
+                )
                 break
 
-            question_text = self.get_current_question_text().lower()
+            question_text = self.get_current_question_text()
             self.logger.info("Round %d Question: %s", round_idx, question_text)
 
-            selected_answer: str | None = None
-            if qa_config and "answers_by_keyword" in qa_config:
-                for entry in qa_config["answers_by_keyword"]:
-                    if entry["keyword"].lower() in question_text:
-                        selected_answer = entry["answer"]
-                        self.logger.info("Matched keyword '%s' -> using configured answer.", entry["keyword"])
-                        break
-
-            if selected_answer:
-                self.fill_custom_answer(selected_answer)
-            elif self.has_suggested_chip():
-                self.logger.info("Using suggested answer chip: %s", self.get_suggested_chip_text())
+            # Click suggested answer button and submit (don't type the same text every time)
+            if self.has_suggested_chip(timeout_ms=4000):
+                chip_text = self.get_suggested_chip_text()
+                self.logger.info("Round %d: Clicking suggested answer chip: %s", round_idx, chip_text)
                 self.click_suggested_chip()
-            elif qa_config and "fallback_answer" in qa_config:
-                self.fill_custom_answer(qa_config["fallback_answer"])
             else:
-                self.fill_custom_answer("Yes, proceed as planned.")
+                textarea = self.page.locator(self.answer_textarea).first
+                if self.is_locator_visible(textarea, timeout_ms=1000):
+                    self.logger.info("Round %d: No suggested chip found, typing confirmation...", round_idx)
+                    self.fill_custom_answer("Yes, proceed as planned.")
 
             self.submit_answer()
             self.wait_ms(1500, reason="Wait for question transition animation")

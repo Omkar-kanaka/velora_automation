@@ -596,6 +596,37 @@ def managed_project(
                 logger.warning("Failed to clean up project id=%s: %s", project_id, exc)
 
 
+@pytest.fixture(scope="function")
+def track_and_cleanup_project(
+    browser_session: BrowserSession,
+    project_service: ProjectService,
+):
+    """Tracks project ID created during UI tests and guarantees deletion before test teardown completes."""
+    tracked_project_ids: list[str] = []
+
+    def _track(project_id: str | None) -> None:
+        if project_id and project_id not in tracked_project_ids:
+            tracked_project_ids.append(project_id)
+            logger.info("Tracking project id='%s' for guaranteed cleanup", project_id)
+
+    yield _track
+
+    token = browser_session.bearer_token
+    if not token and AUTH_TOKEN_FILE.is_file():
+        try:
+            token = AUTH_TOKEN_FILE.read_text(encoding="utf-8").strip()
+        except Exception:
+            token = None
+
+    if token:
+        for project_id in reversed(tracked_project_ids):
+            try:
+                resp = project_service.delete_project(project_id, bearer_token=token)
+                logger.info("Cleaned up QA project id=%s before test completion (HTTP %d)", project_id, resp.status_code)
+            except Exception as exc:
+                logger.warning("Failed to clean up project id=%s: %s", project_id, exc)
+
+
 @pytest.fixture(scope="session")
 def project_test_data() -> dict[str, Any]:
     """Load New Project test data from testdata/project.json using pathlib.Path."""

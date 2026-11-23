@@ -35,7 +35,11 @@ class NewProjectPage(BasePage):
     step_two_start_run_button_name = "Start the run"
     start_run_button_enabled = 'button[type="submit"]:has-text("Start the run"):not([disabled])'
     start_run_button_disabled = 'button[type="submit"]:has-text("Start the run")[disabled]'
-    start_answering_button = 'button:has-text("Start answering")'
+    start_answering_button = (
+        'a:has-text("Start answering"), '
+        'button:has-text("Start answering"), '
+        '[data-slot="button"]:has-text("Start answering")'
+    )
     getting_it_ready_card = 'div:has-text("Getting it ready")'
     first_question_ready_card = 'div:has-text("Your first question is ready")'
 
@@ -183,6 +187,21 @@ class NewProjectPage(BasePage):
             self.page.locator(self.start_answering_button).first,
             timeout_ms=timeout_ms,
         )
+
+    def get_created_project_id(self) -> str | None:
+        """Extract the project ID from the 'Start answering' link href or current URL."""
+        import re
+
+        match = re.search(r"/projects/([a-zA-Z0-9_-]+)", self.page.url)
+        if match:
+            return match.group(1)
+        start_answering = self.page.locator(self.start_answering_button).first
+        if self.is_locator_visible(start_answering, timeout_ms=2000):
+            href = start_answering.get_attribute("href") or ""
+            match = re.search(r"/projects/([a-zA-Z0-9_-]+)", href)
+            if match:
+                return match.group(1)
+        return None
 
     def click_start_answering(self) -> "RunQuestionsPage":
         """Click 'Start answering' and transition into Stage 2 (Pick my Brain)."""

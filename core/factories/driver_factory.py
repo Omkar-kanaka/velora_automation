@@ -61,9 +61,14 @@ class DriverFactory:
             config.slow_mo_ms,
         )
         browser_type = getattr(playwright, config.browser)
+        launch_args: list[str] = []
+        if config.browser == "chromium":
+            launch_args.append("--start-maximized")
+
         launch_kwargs: dict[str, object] = {
             "headless": config.headless,
             "slow_mo": config.slow_mo_ms,
+            "args": launch_args,
         }
         if config.browser == "chromium" and config.browser_channel:
             launch_kwargs["channel"] = config.browser_channel
@@ -90,6 +95,7 @@ class DriverFactory:
                         headless=config.headless,
                         slow_mo=config.slow_mo_ms,
                         channel=channel,
+                        args=launch_args,
                     )
                 except PlaywrightError as channel_exc:
                     logger.warning("Channel '%s' unavailable: %s", channel, channel_exc)
@@ -129,12 +135,16 @@ class DriverFactory:
     ) -> BrowserSession:
         """Create an isolated BrowserContext and Page, optionally pre-seeded with auth state."""
         context_kwargs: dict[str, object] = {
-            "viewport": {
-                "width": config.viewport_width,
-                "height": config.viewport_height,
-            },
             "accept_downloads": True,
         }
+        if not config.headless and config.browser == "chromium":
+            # Allow browser window and web layout to fit the full monitor screen
+            context_kwargs["no_viewport"] = True
+        else:
+            context_kwargs["viewport"] = {
+                "width": config.viewport_width,
+                "height": config.viewport_height,
+            }
         if storage_state is not None:
             state_path = Path(storage_state)
             if state_path.is_file() and state_path.stat().st_size > 0:
