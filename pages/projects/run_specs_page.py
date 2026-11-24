@@ -111,6 +111,20 @@ class RunSpecsPage(BasePage):
             return True
         return btn.is_disabled() or (btn.get_attribute("aria-disabled") == "true")
 
+    def is_request_changes_button_disabled(self, timeout_ms: int = 3000) -> bool:
+        """Check if the 'Request changes' button is disabled (e.g. while specs are generating)."""
+        btn = self.page.locator(self.request_changes_trigger_button).first
+        if not self.is_locator_visible(btn, timeout_ms=timeout_ms):
+            return True
+        return btn.is_disabled() or (btn.get_attribute("aria-disabled") == "true")
+
+    def is_request_changes_button_enabled(self, timeout_ms: int = 3000) -> bool:
+        """Check if the 'Request changes' button is visible and enabled."""
+        btn = self.page.locator(self.request_changes_trigger_button).first
+        if not self.is_locator_visible(btn, timeout_ms=timeout_ms):
+            return False
+        return not (btn.is_disabled() or (btn.get_attribute("aria-disabled") == "true"))
+
     # ------------------------------------------------------------------
     # Spec Changes Side Drawer
     # ------------------------------------------------------------------
