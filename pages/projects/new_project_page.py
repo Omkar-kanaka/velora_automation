@@ -40,6 +40,8 @@ class NewProjectPage(BasePage):
         'button:has-text("Start answering"), '
         '[data-slot="button"]:has-text("Start answering")'
     )
+    kickoff_clone_error = 'p.text-danger-text:has-text("Could not clone that repository")'
+    edit_sources_button = 'button:has-text("Edit sources")'
     getting_it_ready_card = 'div:has-text("Getting it ready")'
     first_question_ready_card = 'div:has-text("Your first question is ready")'
 
@@ -180,6 +182,7 @@ class NewProjectPage(BasePage):
         self.logger.info("Waiting for run kickoff preparation to settle...")
         start_answering = self.page.locator(self.start_answering_button).first
         self.wait_for_visible(start_answering, timeout_ms=timeout_ms)
+        self.wait_for_visible(self.page.locator(self.first_question_ready_card).first, timeout_ms=10000)
 
     def is_start_answering_visible(self, timeout_ms: int = 3000) -> bool:
         """Check if the blue 'Start answering' card is visible."""
@@ -188,20 +191,72 @@ class NewProjectPage(BasePage):
             timeout_ms=timeout_ms,
         )
 
-    def get_created_project_id(self) -> str | None:
-        """Extract the project ID from the 'Start answering' link href or current URL."""
+    def is_start_answering_enabled(self, timeout_ms: int = 3000) -> bool:
+        """Check if 'Start answering' button/link is visible and enabled."""
+        btn = self.page.locator(self.start_answering_button).first
+        if not self.is_locator_visible(btn, timeout_ms=timeout_ms):
+            return False
+        return btn.is_enabled()
+
+    def is_kickoff_step_visible(self, step_title: str, timeout_ms: int = 3000) -> bool:
+        """Check if a specific kickoff step (e.g. 'Set up the project') is visible."""
+        item = self.page.locator(f'text="{step_title}"').first
+        return self.is_locator_visible(item, timeout_ms=timeout_ms)
+
+    def get_created_project_id(self, project_name: str | None = None) -> str | None:
+        """Extract the project ID from current URL, 'Start answering' href, or sidebar item."""
         import re
 
+        # 1. From current URL
         match = re.search(r"/projects/([a-zA-Z0-9_-]+)", self.page.url)
         if match:
             return match.group(1)
+
+        # 2. From 'Start answering' button href
         start_answering = self.page.locator(self.start_answering_button).first
         if self.is_locator_visible(start_answering, timeout_ms=2000):
             href = start_answering.get_attribute("href") or ""
             match = re.search(r"/projects/([a-zA-Z0-9_-]+)", href)
             if match:
                 return match.group(1)
+
+        # 3. From sidebar link matching project_name
+        if project_name:
+            sidebar_link = self.page.locator(f"a[href*='/projects/']:has-text('{project_name}')").first
+            try:
+                sidebar_link.wait_for(state="attached", timeout=5000)
+                href = sidebar_link.get_attribute("href") or ""
+                match = re.search(r"/projects/([a-zA-Z0-9_-]+)", href)
+                if match:
+                    return match.group(1)
+            except Exception:
+                pass
+
+        # 4. Fallback: most recent project link in sidebar
+        recent_link = self.page.locator("a[href*='/projects/']").first
+        if recent_link.count() > 0:
+            href = recent_link.get_attribute("href") or ""
+            match = re.search(r"/projects/([a-zA-Z0-9_-]+)", href)
+            if match:
+                return match.group(1)
+
         return None
+
+    def is_kickoff_clone_error_visible(self, timeout_ms: int = 30000) -> bool:
+        """Check if repository clone error is displayed in the kickoff checklist."""
+        err = self.page.locator(self.kickoff_clone_error).first
+        return self.is_locator_visible(err, timeout_ms=timeout_ms)
+
+    def get_kickoff_clone_error_text(self, timeout_ms: int = 30000) -> str:
+        """Get the text of the repository clone error in the kickoff checklist."""
+        err = self.page.locator(self.kickoff_clone_error).first
+        self.wait_for_visible(err, timeout_ms=timeout_ms)
+        return err.inner_text().strip()
+
+    def is_edit_sources_button_visible(self, timeout_ms: int = 5000) -> bool:
+        """Check if 'Edit sources' recovery button is visible on clone failure."""
+        btn = self.page.locator(self.edit_sources_button).first
+        return self.is_locator_visible(btn, timeout_ms=timeout_ms)
 
     def click_start_answering(self) -> "RunQuestionsPage":
         """Click 'Start answering' and transition into Stage 2 (Pick my Brain)."""
