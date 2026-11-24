@@ -34,7 +34,7 @@
     },
     {
       "name": "SQL Server",
-      "option_text": "SQL Server (untested)",
+      "option_text": "SQL Server",
       "kind": "sqlserver",
       "host": "localhost",
       "port": "1433",
@@ -46,7 +46,7 @@
     },
     {
       "name": "Oracle",
-      "option_text": "Oracle (untested)",
+      "option_text": "Oracle",
       "kind": "oracle",
       "host": "localhost",
       "port": "1521",
