@@ -1,5 +1,6 @@
 """New Project & Context Inputs Test Suite (/app) — PROJ-01 through PROJ-12."""
 
+import time
 from typing import Any
 
 import pytest
@@ -127,22 +128,49 @@ def test_empty_meeting_notes_keeps_submit_disabled(
 @pytest.mark.projects
 @pytest.mark.tc("PROJ-06")
 @pytest.mark.parametrize("users", ["valid_user"], indirect=True)
-def test_add_public_repository_attaches_context_chip(
+def test_add_public_repository_full_workflow_to_start_answering(
     authenticated_user: UserCredentials,
     new_project_page: NewProjectPage,
     repository_modal: RepositoryModal,
     project_test_data: dict[str, Any],
+    track_and_cleanup_project: Any,
 ) -> None:
-    """PROJ-06: Adding a valid public repository closes modal and attaches REPO chip."""
+    """PROJ-06: Add repository, configure timeline, settle kickoff checklist, verify 'Start answering' enables."""
     repo = project_test_data["repository"]
+    new_project_page.open()
     new_project_page.wait_until_loaded()
     new_project_page.open_repository_modal()
 
+    # Step 1: Add repository
     repository_modal.add_public_repository(url=repo["valid_url"], branch=repo["valid_branch"])
-
     assert not repository_modal.is_open()
     assert new_project_page.is_context_item_visible(repo["expected_chip_text"])
     assert new_project_page.is_start_button_enabled()
+
+    # Step 2: Click Start -> Step 2
+    new_project_page.click_start()
+    new_project_page.wait_for_step_two_loaded()
+
+    # Step 3: Enter project name & timeline end date
+    unique_name = f"Repo Full Flow {int(time.time())}"
+    new_project_page.enter_project_name(unique_name)
+    new_project_page.select_end_date()
+    assert new_project_page.is_start_run_button_enabled()
+
+    # Step 4: Click Next / Start the run
+    new_project_page.click_start_the_run()
+
+    # Guaranteed cleanup tracking immediately after run creation
+    created_id = new_project_page.get_created_project_id(unique_name)
+    if created_id:
+        track_and_cleanup_project(created_id)
+
+    # Step 5: Check all checklist steps are done and 'Start answering' enables
+    new_project_page.wait_for_getting_it_ready_settled(timeout_ms=60000)
+    assert new_project_page.is_kickoff_step_visible("Set up the project")
+    assert new_project_page.is_kickoff_step_visible("Preparing your first question")
+    assert new_project_page.is_start_answering_visible()
+    assert new_project_page.is_start_answering_enabled()
 
 
 @pytest.mark.regression
@@ -171,6 +199,146 @@ def test_repository_private_radio_reveals_access_token_field(
     assert repository_modal.is_public_selected()
     assert not repository_modal.is_access_token_visible(timeout_ms=1000)
     repository_modal.click_cancel()
+
+
+@pytest.mark.regression
+@pytest.mark.projects
+@pytest.mark.tc("PROJ-07-MISSING-TOKEN")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_repository_private_missing_token_blocks_submission_and_cancel_discards(
+    authenticated_user: UserCredentials,
+    new_project_page: NewProjectPage,
+    repository_modal: RepositoryModal,
+    project_test_data: dict[str, Any],
+) -> None:
+    """PROJ-07-MISSING-TOKEN: Submitting a private repository with empty token keeps modal open."""
+    repo = project_test_data["repository"]
+    new_project_page.wait_until_loaded()
+    new_project_page.open_repository_modal()
+    repository_modal.wait_until_open()
+
+    # Select private repo and fill valid URL, but leave token blank
+    repository_modal.select_private()
+    repository_modal.enter_repository_link(repo["valid_url"])
+    repository_modal.enter_branch(repo["valid_branch"])
+    assert repository_modal.get_access_token_value() == ""
+
+    # Attempt submission with empty token
+    repository_modal.click_add_repository(expect_close=False)
+
+    # Validate modal remains open and no repo chip attached
+    assert repository_modal.is_open(), "Modal closed unexpectedly without a token."
+    repository_modal.click_cancel()
+    assert not repository_modal.is_open()
+    assert not new_project_page.is_context_item_visible(repo["expected_chip_text"])
+    assert new_project_page.is_start_button_disabled()
+
+
+@pytest.mark.regression
+@pytest.mark.projects
+@pytest.mark.tc("PROJ-07-INVALID-TOKEN")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_repository_private_invalid_token_blocks_successful_run(
+    authenticated_user: UserCredentials,
+    new_project_page: NewProjectPage,
+    repository_modal: RepositoryModal,
+    project_test_data: dict[str, Any],
+    track_and_cleanup_project: Any,
+) -> None:
+    """PROJ-07-INVALID-TOKEN: Private repo with invalid token fails analysis, shows clone error, and blocks 'Start answering'."""
+    repo = project_test_data["repository"]
+    private_cfg = repo.get("private_repository", {})
+    invalid_token = private_cfg.get("invalid_token", "invalid_access_token_xyz999")
+
+    new_project_page.open()
+    new_project_page.wait_until_loaded()
+    new_project_page.open_repository_modal()
+    repository_modal.wait_until_open()
+
+    # Step 1: Add private repo with invalid token
+    repository_modal.select_private()
+    repository_modal.enter_repository_link(private_cfg.get("valid_url", repo["valid_url"]))
+    repository_modal.enter_branch(private_cfg.get("valid_branch", repo["valid_branch"]))
+    repository_modal.enter_access_token(invalid_token)
+    repository_modal.click_add_repository(expect_close=True)
+
+    # Step 2: Attempt to start project
+    new_project_page.click_start()
+    new_project_page.wait_for_step_two_loaded()
+
+    unique_name = f"Invalid Token {int(time.time())}"
+    new_project_page.enter_project_name(unique_name)
+    new_project_page.select_end_date()
+    new_project_page.click_start_the_run()
+
+    # Guaranteed cleanup
+    created_id = new_project_page.get_created_project_id(unique_name)
+    if created_id:
+        track_and_cleanup_project(created_id)
+
+    # Step 3: Verify that invalid token displays clone error and blocks 'Start answering'
+    assert new_project_page.is_kickoff_clone_error_visible(timeout_ms=30000)
+    error_msg = new_project_page.get_kickoff_clone_error_text()
+    assert "Could not clone that repository" in error_msg
+    assert new_project_page.is_edit_sources_button_visible()
+    assert not new_project_page.is_start_answering_visible(timeout_ms=3000)
+
+
+@pytest.mark.regression
+@pytest.mark.projects
+@pytest.mark.tc("PROJ-07-VALID-TOKEN")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_repository_private_valid_token_full_workflow_to_start_answering(
+    authenticated_user: UserCredentials,
+    new_project_page: NewProjectPage,
+    repository_modal: RepositoryModal,
+    project_test_data: dict[str, Any],
+    track_and_cleanup_project: Any,
+) -> None:
+    """PROJ-07-VALID-TOKEN: Private repository with valid PAT token passes kickoff and enables 'Start answering'."""
+    repo = project_test_data["repository"]
+    private_cfg = repo.get("private_repository", {})
+
+    new_project_page.open()
+    new_project_page.wait_until_loaded()
+    new_project_page.open_repository_modal()
+    repository_modal.wait_until_open()
+
+    # Step 1: Add private repo with valid token
+    repository_modal.select_private()
+    repository_modal.enter_repository_link(private_cfg.get("valid_url", repo["valid_url"]))
+    repository_modal.enter_branch(private_cfg.get("valid_branch", "main"))
+    repository_modal.enter_access_token(private_cfg["valid_token"])
+    repository_modal.click_add_repository(expect_close=True)
+
+    assert not repository_modal.is_open()
+    assert new_project_page.is_context_item_visible(private_cfg.get("expected_chip_text", "private-crm-testing"))
+    assert new_project_page.is_start_button_enabled()
+
+    # Step 2: Click Start -> Step 2
+    new_project_page.click_start()
+    new_project_page.wait_for_step_two_loaded()
+
+    # Step 3: Enter project name & timeline end date
+    unique_name = f"Private Valid {int(time.time())}"
+    new_project_page.enter_project_name(unique_name)
+    new_project_page.select_end_date()
+    assert new_project_page.is_start_run_button_enabled()
+
+    # Step 4: Click Next / Start the run
+    new_project_page.click_start_the_run()
+
+    # Guaranteed cleanup tracking immediately after run creation
+    created_id = new_project_page.get_created_project_id(unique_name)
+    if created_id:
+        track_and_cleanup_project(created_id)
+
+    # Step 5: Check all checklist steps are done and 'Start answering' enables
+    new_project_page.wait_for_getting_it_ready_settled(timeout_ms=60000)
+    assert new_project_page.is_kickoff_step_visible("Set up the project")
+    assert new_project_page.is_kickoff_step_visible("Preparing your first question")
+    assert new_project_page.is_start_answering_visible()
+    assert new_project_page.is_start_answering_enabled()
 
 
 @pytest.mark.regression
