@@ -27,6 +27,7 @@ from pages.components.sidebar_component import SidebarComponent
 from pages.dashboard_page import DashboardPage
 from pages.projects.meeting_notes_modal import MeetingNotesModal
 from pages.projects.new_project_page import NewProjectPage
+from pages.projects.new_run_page import NewRunPage
 from pages.projects.project_detail_page import ProjectDetailPage
 from pages.projects.repository_modal import RepositoryModal
 from pages.projects.run_questions_page import RunQuestionsPage
@@ -554,6 +555,19 @@ def run_specs_page(
     app_config: BaseConfig,
 ) -> RunSpecsPage:
     return RunSpecsPage(
+        page=browser_session.page,
+        base_url=app_config.base_url,
+        default_timeout_ms=app_config.default_timeout_ms,
+        navigation_timeout_ms=app_config.navigation_timeout_ms,
+    )
+
+
+@pytest.fixture(scope="function")
+def new_run_page(
+    browser_session: BrowserSession,
+    app_config: BaseConfig,
+) -> NewRunPage:
+    return NewRunPage(
         page=browser_session.page,
         base_url=app_config.base_url,
         default_timeout_ms=app_config.default_timeout_ms,
