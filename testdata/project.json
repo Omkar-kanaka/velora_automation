@@ -12,10 +12,17 @@
   },
   "repository": {
     "valid_url": "https://github.com/octocat/Hello-World",
-    "valid_branch": "main",
-    "expected_chip_text": "Hello-World @ main",
+    "valid_branch": "master",
+    "expected_chip_text": "Hello-World @ master",
     "invalid_url": "invalid-repo-url",
-    "expected_invalid_message": "Use a full repository link, like https://github.com/org/repo."
+    "expected_invalid_message": "Use a full repository link, like https://github.com/org/repo.",
+    "private_repository": {
+      "valid_url": "https://github.com/omkar391/private-crm-testing.git",
+      "valid_branch": "main",
+      "valid_token": "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",
+      "invalid_token": "invalid_access_token_xyz999",
+      "expected_chip_text": "private-crm-testing"
+    }
   },
   "uploads": {
     "valid_frd_files": [

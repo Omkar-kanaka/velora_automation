@@ -6,8 +6,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 from utils.data_generator import generate_unique_email
 from utils.paths import USER_DATA_FILE
+
+# Automatically load environment variables from .env if present
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env", override=False)
+
+
+def get_llm_api_key(env_var_name: str) -> str:
+    """Retrieve an LLM API key from environment variables (.env)."""
+    return os.getenv(env_var_name, "").strip()
 
 
 def _get_bool(env_var: str, default: bool) -> bool:

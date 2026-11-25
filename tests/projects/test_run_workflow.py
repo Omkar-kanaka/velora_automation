@@ -88,14 +88,9 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     # Check in-progress constraints if generation is still underway
     if run_specs_page.is_writing_specs(timeout_ms=5000):
         assert run_specs_page.is_continue_to_delivery_disabled()
-
-        # Verify side drawer restriction during specs writing
-        run_specs_page.open_request_changes_drawer()
-        assert run_specs_page.is_request_changes_drawer_open()
-        assert run_specs_page.is_drawer_textarea_disabled()
-        assert run_specs_page.is_drawer_send_button_disabled()
-        run_specs_page.close_request_changes_drawer()
-        assert not run_specs_page.is_request_changes_drawer_open()
+        assert run_specs_page.is_request_changes_button_disabled(), (
+            "Expected 'Request changes' button to be disabled while specs are actively generating"
+        )
 
     # ------------------------------------------------------------------
     # RUN-07: Wait for Specs Generation to Settle (Ready for your review)
@@ -135,6 +130,9 @@ def test_complete_hms_run_workflow_lifecycle_e2e(
     # ------------------------------------------------------------------
     # RUN-10: Request Changes Flow (Completed / Ready State)
     # ------------------------------------------------------------------
+    assert run_specs_page.is_request_changes_button_enabled(), (
+        "Expected 'Request changes' button to become enabled after specs generation completed"
+    )
     run_specs_page.open_request_changes_drawer()
     assert run_specs_page.is_request_changes_drawer_open()
     assert not run_specs_page.is_drawer_textarea_disabled()

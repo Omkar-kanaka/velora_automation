@@ -34,7 +34,7 @@
     },
     {
       "name": "SQL Server",
-      "option_text": "SQL Server (untested)",
+      "option_text": "SQL Server",
       "kind": "sqlserver",
       "host": "localhost",
       "port": "1433",
@@ -46,7 +46,7 @@
     },
     {
       "name": "Oracle",
-      "option_text": "Oracle (untested)",
+      "option_text": "Oracle",
       "kind": "oracle",
       "host": "localhost",
       "port": "1521",
@@ -65,5 +65,48 @@
     "expected_success_text": "Connection works.",
     "expected_invalid_text": "Can't write to the folder",
     "expected_malformed_text": "Use an absolute path."
+  },
+  "ai_model": {
+    "invalid_api_key": "sk-invalid-test-api-key-xyz1234567890",
+    "expected_success_feedback": "Connection works.",
+    "all_provider_options": [
+      "Gemini (API key)",
+      "Anthropic",
+      "OpenAI",
+      "OpenRouter",
+      "OpenAI-compatible server (vLLM, LM Studio…)",
+      "Ollama",
+      "Other (LiteLLM)"
+    ],
+    "profiles": [
+      {
+        "name": "Other (LiteLLM)",
+        "provider_option": "Other (LiteLLM)",
+        "model": "nvidia_nim/nvidia/nemotron-3.5-lightning-30b-a3b",
+        "base_url": "https://integrate.api.nvidia.com/v1/",
+        "env_key": "NVIDIA_NIM_API_KEY"
+      },
+      {
+        "name": "Gemini",
+        "provider_option": "Gemini (API key)",
+        "model": "gemini-3.5-flash-lite",
+        "base_url": "",
+        "env_key": "GEMINI_API_KEY"
+      },
+      {
+        "name": "OpenAI",
+        "provider_option": "OpenAI",
+        "model": "gpt-6-luna",
+        "base_url": "",
+        "env_key": "OPENAI_API_KEY"
+      },
+      {
+        "name": "OpenRouter",
+        "provider_option": "OpenRouter",
+        "model": "openrouter/free",
+        "base_url": "",
+        "env_key": "OPENROUTER_API_KEY"
+      }
+    ]
   }
 }

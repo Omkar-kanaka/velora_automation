@@ -55,6 +55,17 @@ class RepositoryModal(BasePage):
     def is_access_token_visible(self, timeout_ms: int = 2000) -> bool:
         return self.is_locator_visible(self.page.locator(self.repo_token_input), timeout_ms=timeout_ms)
 
+    def enter_access_token(self, token: str) -> "RepositoryModal":
+        self.fill_locator(self.page.locator(self.repo_token_input), token, "Repository access token input")
+        return self
+
+    def get_access_token_value(self) -> str:
+        return self.page.locator(self.repo_token_input).input_value()
+
+    def is_add_repository_button_disabled(self) -> bool:
+        btn = self._dialog().get_by_role("button", name=self.add_repository_button_name)
+        return btn.is_disabled() or (btn.get_attribute("aria-disabled") == "true")
+
     def click_add_repository(self, expect_close: bool = True) -> None:
         btn = self._dialog().get_by_role("button", name=self.add_repository_button_name)
         self.click_locator(btn, "Add repository submit button")
@@ -76,3 +87,19 @@ class RepositoryModal(BasePage):
         if branch:
             self.enter_branch(branch)
         self.click_add_repository(expect_close=True)
+
+    def add_private_repository(
+        self,
+        url: str,
+        token: str = "",
+        branch: str = "",
+        expect_close: bool = True,
+    ) -> None:
+        self.wait_until_open()
+        self.select_private()
+        self.enter_repository_link(url)
+        if token:
+            self.enter_access_token(token)
+        if branch:
+            self.enter_branch(branch)
+        self.click_add_repository(expect_close=expect_close)

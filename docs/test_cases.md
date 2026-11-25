@@ -13,7 +13,7 @@
    - Scope: New Project creation, prompt inputs, context uploads (FRD docs, meeting notes, git repos), and projects list.
    - Automation: [`tests/projects/test_new_project.py`](../tests/projects/test_new_project.py) and [`tests/projects/test_projects_list.py`](../tests/projects/test_projects_list.py)
 
-3. [**Platform Navigation & Settings** (`NAV-01` to `NAV-02`, `SET-01` to `SET-07`)](./test_cases/platform_and_settings_test_cases.md)
+3. [**Platform Navigation & Settings** (`NAV-01` to `NAV-02`, `SET-01` to `SET-15`)](./test_cases/platform_and_settings_test_cases.md)
    - Scope: Sidebar shell navigation, collapsible rail, and configuration settings (Database, Storage, AI model).
    - Automation: [`tests/navigation/test_navigation.py`](../tests/navigation/test_navigation.py) and [`tests/settings/test_settings.py`](../tests/settings/test_settings.py)
 

@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from config.config import UserCredentials
+from config.config import UserCredentials, get_llm_api_key
 from pages.settings_page import SettingsPage
 
 
@@ -349,3 +349,150 @@ def test_database_test_connection_rejects_invalid_credentials(
         )
     finally:
         settings_page.cancel_database_edit_form()
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.ui
+@pytest.mark.tc("SET-11")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_ai_model_edit_form_expands_and_cancel_restores_summary(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-11: Expanding AI Model Edit form, verifying masked API key, and clicking Cancel preserves saved config."""
+    settings_page.open()
+    original_summary = settings_page.get_ai_model_header_summary()
+
+    settings_page.open_ai_model_edit_form()
+    assert settings_page.is_ai_model_edit_form_open(), "AI Model edit form did not open"
+    assert settings_page.is_ai_api_key_masked(), "AI API key field must be masked (type='password')"
+
+    settings_page.cancel_ai_model_form()
+    assert not settings_page.is_ai_model_edit_form_open(), "AI Model edit form did not close after Cancel"
+    assert settings_page.get_ai_model_header_summary() == original_summary
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.ui
+@pytest.mark.tc("SET-12")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_ai_model_dropdown_options_match_expected_providers(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-12: AI Model provider dropdown contains all supported providers."""
+    expected_providers = settings_test_data["ai_model"]["all_provider_options"]
+    settings_page.open()
+    settings_page.open_ai_model_edit_form()
+
+    try:
+        available_options = settings_page.get_ai_provider_options()
+        for expected in expected_providers:
+            assert any(expected.lower() in opt.lower() for opt in available_options), (
+                f"Expected provider '{expected}' not found in available options: {available_options}"
+            )
+    finally:
+        settings_page.cancel_ai_model_form()
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.tc("SET-13")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_ai_model_test_connection_fails_with_invalid_api_key(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-13: AI Model Test connection with an invalid API key displays an error feedback message."""
+    ai_data = settings_test_data["ai_model"]
+    settings_page.open()
+    settings_page.open_ai_model_edit_form()
+
+    try:
+        settings_page.enter_ai_api_key(ai_data["invalid_api_key"])
+        status_code, payload, feedback_text = settings_page.test_ai_model_connection()
+
+        # The backend should report failure for invalid key
+        assert feedback_text != ai_data["expected_success_feedback"], (
+            f"Expected error feedback for invalid API key, but received success: '{feedback_text}'"
+        )
+        assert len(feedback_text) > 0, "Expected non-empty failure feedback message on UI"
+    finally:
+        settings_page.cancel_ai_model_form()
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.tc("SET-14")
+@pytest.mark.parametrize(
+    "profile_name",
+    ["Other (LiteLLM)", "Gemini", "OpenAI", "OpenRouter"],
+)
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_ai_model_connectivity_across_configured_providers(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+    profile_name: str,
+) -> None:
+    """SET-14: Test connection for configured AI model providers using API keys from .env."""
+    ai_data = settings_test_data["ai_model"]
+    profile = next((p for p in ai_data["profiles"] if p["name"] == profile_name), None)
+    if not profile:
+        pytest.skip(f"No profile defined for '{profile_name}'")
+
+    api_key = get_llm_api_key(profile["env_key"])
+
+    if not api_key:
+        pytest.skip(
+            f"Skipping '{profile_name}': No API key configured in .env for '{profile['env_key']}'"
+        )
+
+    settings_page.open()
+    settings_page.open_ai_model_edit_form()
+    try:
+        settings_page.fill_ai_model_form(profile, api_key=api_key)
+        status_code, payload, feedback_text = settings_page.test_ai_model_connection()
+
+        # Primary assertion: Strictly assert the UI text visible to the user on the screen
+        assert feedback_text == ai_data["expected_success_feedback"], (
+            f"AI Model '{profile_name}' test connection failed on UI! "
+            f"Expected '{ai_data['expected_success_feedback']}', but UI displayed: '{feedback_text}'"
+        )
+        assert status_code == 200, f"Expected HTTP 200 but received {status_code}"
+        assert payload.get("ok") is True, f"API returned error: {payload.get('error')}"
+    finally:
+        settings_page.cancel_ai_model_form()
+
+
+@pytest.mark.regression
+@pytest.mark.settings
+@pytest.mark.ui
+@pytest.mark.tc("SET-15")
+@pytest.mark.parametrize("users", ["valid_user"], indirect=True)
+def test_ai_model_cancel_preserves_baseline_config(
+    authenticated_user: UserCredentials,
+    settings_page: SettingsPage,
+    settings_test_data: dict[str, Any],
+) -> None:
+    """SET-15: Modifying AI model form fields and clicking Cancel discards changes and preserves baseline summary."""
+    settings_page.open()
+    baseline_summary = settings_page.get_ai_model_header_summary()
+
+    settings_page.open_ai_model_edit_form()
+    try:
+        settings_page.select_ai_provider("Gemini (API key)")
+        settings_page.enter_ai_model("gemini-1.5-pro")
+        settings_page.cancel_ai_model_form()
+
+        assert not settings_page.is_ai_model_edit_form_open()
+        assert settings_page.get_ai_model_header_summary() == baseline_summary
+    finally:
+        if settings_page.is_ai_model_edit_form_open():
+            settings_page.cancel_ai_model_form()
+
