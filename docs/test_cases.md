@@ -17,6 +17,10 @@
    - Scope: Sidebar shell navigation, collapsible rail, and configuration settings (Database, Storage, AI model).
    - Automation: [`tests/navigation/test_navigation.py`](../tests/navigation/test_navigation.py) and [`tests/settings/test_settings.py`](../tests/settings/test_settings.py)
 
+4. [**Runs & Workflow Lifecycle** (`RUN-01` to `RUN-11`, `RUN-NEW-01` to `RUN-NEW-04`)](./test_cases/runs_and_workflow_test_cases.md)
+   - Scope: Step 1 Composer, Step 2 Setup, Stage 1 Kickoff, Stage 2 Questions, Stage 3 Specs review, and iterative Project New Run.
+   - Automation: [`tests/projects/test_run_workflow.py`](../tests/projects/test_run_workflow.py) and [`tests/projects/test_project_new_run.py`](../tests/projects/test_project_new_run.py)
+
 ---
 
 ## Excel Export Utility
