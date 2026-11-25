@@ -3,9 +3,9 @@
 - **Functional Area:** Global App Shell, Sidebar Navigation & Configuration Settings (Database, Storage, AI Model)
 - **Test Suite References:**
   - [`tests/navigation/test_navigation.py`](../../tests/navigation/test_navigation.py) (`NAV-01` to `NAV-02`)
-  - [`tests/settings/test_settings.py`](../../tests/settings/test_settings.py) (`SET-01` to `SET-07`)
+  - [`tests/settings/test_settings.py`](../../tests/settings/test_settings.py) (`SET-01` to `SET-15`)
 - **Pytest Markers:** `@pytest.mark.nav`, `@pytest.mark.settings`, `@pytest.mark.smoke`, `@pytest.mark.regression`, `@pytest.mark.ui`
-- **Total Test Cases:** 14
+- **Total Test Cases:** 19
 
 ---
 
@@ -34,3 +34,9 @@
 | `SET-08` | P1 | Positive / Integration | Database connectivity testing across Docker profiles | 1. In **Database**, click **Edit**<br>2. Select Kind and enter host/port/creds for PostgreSQL, MySQL, SQL Server, Oracle<br>3. Click **Test connection**<br>4. Click **Cancel** | Each database profile strictly asserts UI text displays **Connection works.**; tests fail if an engine fails to connect. | Automated (Regression) | `test_settings_database_connectivity_across_profiles` | - |
 | `SET-09` | P1 | UI | Database configuration Cancel preserves baseline config | 1. In **Database**, click **Edit**<br>2. Fill with alternate DB profile (MySQL)<br>3. Click **Cancel**<br>4. Reopen form | Form fields and header summary revert to original baseline PostgreSQL configuration. | Automated (Regression) | `test_database_configuration_cancel_preserves_baseline_config` | - |
 | `SET-10` | P2 | Negative | Database Test connection rejects invalid credentials | 1. In **Database**, click **Edit**<br>2. Enter correct host/port but invalid password<br>3. Click **Test connection**<br>4. Click **Cancel** | Error feedback confirms credential rejection (`The database rejected the username or password.`) without crashing. | Automated (Regression) | `test_database_test_connection_rejects_invalid_credentials` | - |
+| `SET-11` | P1 | UI | AI Model Edit form expands, masks API key, and Cancel restores view | 1. In **AI model**, click **Edit**<br>2. Inspect API key field masking<br>3. Click **Cancel** | Form expands with Provider, Model, API key, Base URL fields; API key field has type="password"; clicking Cancel collapses form and preserves original summary. | Automated (Regression) | `test_ai_model_edit_form_expands_and_cancel_restores_summary` | - |
+| `SET-12` | P1 | UI / Functional | AI Model provider dropdown contains all supported LLM providers | 1. In **AI model**, click **Edit**<br>2. Open Provider combobox<br>3. Verify available provider options<br>4. Click **Cancel** | Combobox displays all 7 supported providers: Gemini (API key), Anthropic, OpenAI, OpenRouter, OpenAI-compatible server (vLLM, LM Studio…), Ollama, and Other (LiteLLM). | Automated (Regression) | `test_ai_model_dropdown_options_match_expected_providers` | - |
+| `SET-13` | P2 | Negative | AI Model Test connection fails with invalid API key | 1. In **AI model**, click **Edit**<br>2. Enter invalid API key<br>3. Click **Test connection**<br>4. Click **Cancel** | Connection test fails; UI displays error feedback message; green 'Connection works.' does not appear; Cancel preserves live configuration. | Automated (Regression) | `test_ai_model_test_connection_fails_with_invalid_api_key` | - |
+| `SET-14` | P0 | Positive / Integration | AI Model Test connection across configured providers using .env keys | 1. In **AI model**, click **Edit**<br>2. Fill Provider, Model, and API key from `.env` (Other LiteLLM, Gemini, OpenAI, OpenRouter)<br>3. Click **Test connection**<br>4. Click **Cancel** | Backend validates API credentials against provider endpoint; inline green feedback strictly displays **Connection works.** and API returns HTTP 200 with `{ok: true}`. | Automated (Regression) | `test_ai_model_connectivity_across_configured_providers` | - |
+| `SET-15` | P1 | UI | AI Model configuration Cancel preserves baseline config | 1. In **AI model**, click **Edit**<br>2. Select another provider and enter temporary model name<br>3. Click **Cancel**<br>4. Reopen form | Form changes are discarded; card header and reopened form retain original baseline configuration. | Automated (Regression) | `test_ai_model_cancel_preserves_baseline_config` | - |
+
