@@ -89,5 +89,11 @@
     "request_changes": {
       "sample_feedback": "Please add an endpoint to update the greeting message dynamically in PostgreSQL."
     }
+  },
+  "new_run": {
+    "sample_iteration_prompt": "Add user authentication and rate limiting to the existing endpoints.",
+    "sample_iteration_prompt_short": "Implement JWT bearer token authentication.",
+    "expected_composer_heading_prefix": "What's changed in",
+    "expected_placeholder": "What's new since the last run? A sentence is enough..."
   }
 }
