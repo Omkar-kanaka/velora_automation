@@ -1,10 +1,12 @@
 """Root pytest configuration: event loop policy, factories, fixtures, and failure artifacts."""
 
 import asyncio
+import base64
 import json
 import os
 import re
 import sys
+import time
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
@@ -234,6 +236,24 @@ def _is_valid_state_file(path: Path) -> bool:
         return False
 
 
+def _is_token_fresh(token: str | None, min_ttl_seconds: int = 120) -> bool:
+    """Return True if a JWT bearer token is valid and has at least min_ttl_seconds remaining."""
+    if not token:
+        return False
+    parts = token.split(".")
+    if len(parts) != 3:
+        return False
+    try:
+        payload_b64 = parts[1] + "=" * (-len(parts[1]) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode("utf-8"))
+        exp = payload.get("exp")
+        if not isinstance(exp, (int, float)):
+            return False
+        return float(exp) > (time.time() + min_ttl_seconds)
+    except Exception:
+        return False
+
+
 _DUMP_IDB_SCRIPT = """
 async () => {
     return new Promise((resolve) => {
@@ -310,8 +330,10 @@ def session_auth_state(
     if cached_idb and _is_valid_state_file(AUTH_STATE_FILE):
         if AUTH_TOKEN_FILE.is_file():
             cached_token = AUTH_TOKEN_FILE.read_text(encoding="utf-8").strip() or None
-        logger.info("Reusing existing session auth state (%d IDB items) from %s", len(cached_idb), AUTH_DIR)
-        return AUTH_STATE_FILE, cached_idb, cached_token
+        if _is_token_fresh(cached_token):
+            logger.info("Reusing existing session auth state (%d IDB items) from %s", len(cached_idb), AUTH_DIR)
+            return AUTH_STATE_FILE, cached_idb, cached_token
+        logger.info("Cached bearer token is missing or expired; regenerating fresh session auth state")
 
     user = app_config.get_user("valid_user")
     logger.info("Generating session auth state for user=%s", user.email)
@@ -674,6 +696,17 @@ def authenticated_user(
                 re.compile(r".*/app($|/.*)"),
                 timeout=app_config.navigation_timeout_ms,
             )
+            if not _is_token_fresh(browser_session.bearer_token):
+                browser_session.page.wait_for_timeout(1000)
+                if not _is_token_fresh(browser_session.bearer_token):
+                    idb_items: list[dict[str, Any]] = browser_session.page.evaluate(_DUMP_IDB_SCRIPT)
+                    for item in idb_items:
+                        val = item.get("value", {})
+                        if isinstance(val, dict) and "stsTokenManager" in val:
+                            refreshed = val["stsTokenManager"].get("accessToken")
+                            if _is_token_fresh(refreshed):
+                                browser_session.bearer_token = refreshed
+                                break
             logger.info("Session restored successfully for %s at %s", users.email, browser_session.page.url)
         except Exception:
             current_url = browser_session.page.url
