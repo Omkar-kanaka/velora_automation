@@ -21,3 +21,7 @@ playwright-report/
 # MS Office / Excel temporary lock files
 ~$*.xlsx
 ~$*.xls
+
+# Local AI agent / Claude  guides
+AGENTS.md
+CLAUDE.md
